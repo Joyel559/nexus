@@ -27,7 +27,7 @@ dependencies = [
     "cryptography>=45.0.0",
     "prometheus-client>=0.23.1",
     "redis>=6.4.0",
-    "psycopg[binary]>=3.2.13",
+    "psycopg[binary]>=3.3.4",
 ]
 
 [project.scripts]
