@@ -1,0 +1,60 @@
+version: "3.9"
+
+services:
+  gateway:
+    build: .
+    container_name: nexus
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    env_file:
+      - .env
+    environment:
+      GATEWAY_STATE_DB_PATH: "/data/gateway.db"
+      LOG_FILE: "/data/server.log"
+    volumes:
+      - gateway-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8082/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  postgres:
+    image: postgres:17
+    profiles: ["power"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gateway
+      POSTGRES_PASSWORD: gateway
+      POSTGRES_DB: gateway
+    ports:
+      - "5432:5432"
+    volumes:
+      - gateway-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gateway -d gateway"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7
+    profiles: ["power"]
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - gateway-redis:/data
+    command: ["redis-server", "--save", "60", "1", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  gateway-data:
+  gateway-postgres:
+  gateway-redis:

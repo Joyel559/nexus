@@ -1,0 +1,28 @@
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv/
+.coverage
+
+# local editor/assistant state
+.claude/
+.cursor/
+.serena/
+.codex/
+
+# local runtime data
+.env
+.env.*
+!.env.example
+.config/
+*.db
+*.sqlite
+*.sqlite3
+*.log
+debug-*.log
+server.log
+
+# local caches/workspaces
+agent_workspace/
+llama_cache/
+.smoke-results/

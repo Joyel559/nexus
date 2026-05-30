@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Nexus Dashboard Guide</title>
+  <style>
+    body { font-family: Inter, system-ui, sans-serif; margin: 0; background:#0f172a; color:#e2e8f0; }
+    main { max-width: 1000px; margin: 0 auto; padding: 28px; }
+    h1,h2 { color:#7dd3fc; }
+    .card { background:#111827; border:1px solid #334155; border-radius:12px; padding:16px; margin:12px 0; }
+    code { background:#1e293b; padding:2px 6px; border-radius:6px; }
+    .grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); gap:12px; }
+    .ok { color:#86efac; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Dashboard Guide</h1>
+    <p>This page explains how the admin dashboard maps to runtime behavior.</p>
+
+    <h2>1) Provider & Account Operations</h2>
+    <div class="grid">
+      <div class="card"><strong>Providers</strong><br/>Enable/disable providers, view health/latency, and routing availability.</div>
+      <div class="card"><strong>Accounts</strong><br/>Manage multiple keys/tokens per provider, with cooldown and quota tracking.</div>
+      <div class="card"><strong>Routing Rules</strong><br/>Per-model provider order/weights/strategy for fallback orchestration.</div>
+      <div class="card"><strong>Metrics</strong><br/>Requests, retries, fallback events, queue pressure, latency, and costs.</div>
+    </div>
+
+    <h2>2) OAuth Ecosystems</h2>
+    <div class="card">
+      <p>Use <code>Connect Google</code> and <code>Connect GitHub</code> for OAuth onboarding. Tokens are stored encrypted and used by provider pools.</p>
+      <p class="ok">Flow: click connect -> consent -> callback -> account appears -> eligible for routing.</p>
+    </div>
+
+    <h2>3) Agents Control Center</h2>
+    <div class="card">
+      <ul>
+        <li>Rescan/import all discovered skills</li>
+        <li>Role-level on/off toggles</li>
+        <li>Sub-agent-level on/off toggles</li>
+        <li>Sync enabled agents to Claude directory (<code>~/.claude/agents</code> or configured target)</li>
+      </ul>
+    </div>
+
+    <h2>4) How It Connects To Claude Code</h2>
+    <div class="card">
+      <p><code>fcc-claude</code> points Claude CLI to the local gateway URL and auth token. Claude continues to use Anthropic-compatible endpoints, while the gateway chooses providers/accounts.</p>
+    </div>
+
+    <h2>5) Recommended Operator Workflow</h2>
+    <div class="card">
+      <ol>
+        <li>Start <code>fcc-server</code></li>
+        <li>Configure providers/accounts in dashboard</li>
+        <li>Set routing strategy and fallback chain</li>
+        <li>Import/rescan/sync agents</li>
+        <li>Run <code>fcc-claude</code> from your project folder</li>
+      </ol>
+    </div>
+  </main>
+</body>
+</html>

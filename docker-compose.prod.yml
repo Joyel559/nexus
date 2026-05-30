@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+  gateway:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    env_file:
+      - .env
+    environment:
+      GATEWAY_STORAGE_BACKEND: "postgres"
+      GATEWAY_STATE_DB_PATH: "/data/gateway.db"
+      LOG_FILE: "/data/server.log"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - gateway-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8082/health"]
+      interval: 20s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: gateway
+      POSTGRES_PASSWORD: gateway
+      POSTGRES_DB: gateway
+    volumes:
+      - gateway-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gateway -d gateway"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  gateway-data:
+  gateway-postgres:

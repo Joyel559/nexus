@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Nexus Admin</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="/admin/assets/admin.css?v=20260530-agents-role-ui2" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div>
+            <h1>Nexus</h1>
+            <p>Server Control</p>
+          </div>
+        </div>
+        <nav id="sectionNav" class="section-nav" aria-label="Settings sections"></nav>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Local Admin</p>
+            <h2>Runtime Config</h2>
+          </div>
+          <div class="server-state">
+            <span id="serverStatus" class="status-pill neutral">Loading</span>
+            <span id="modelBadge" class="model-badge"></span>
+          </div>
+        </header>
+
+        <section class="provider-strip" aria-label="Provider status">
+          <div class="strip-header">
+            <h3>Providers</h3>
+            <button id="refreshLocal" class="ghost-button" type="button">Check local</button>
+          </div>
+          <div id="providerGrid" class="provider-grid"></div>
+        </section>
+
+        <section class="provider-strip" aria-label="Gateway dashboard">
+          <div class="strip-header">
+            <h3>Gateway Pools & Metrics</h3>
+            <button id="refreshGateway" class="ghost-button" type="button">Refresh</button>
+          </div>
+          <div class="gateway-layout">
+            <div class="dashboard-top-row">
+              <article class="gateway-card glass-panel">
+                <h4>Active Models</h4>
+                <div id="dashActiveModels" class="metric-container"></div>
+              </article>
+              <article class="gateway-card glass-panel">
+                <h4>Model Accuracy</h4>
+                <div id="dashModelAccuracy" class="metric-container"></div>
+              </article>
+              <article class="gateway-card glass-panel">
+                <h4>Model Metrics</h4>
+                <div id="dashModelMetrics" class="metric-container"></div>
+              </article>
+            </div>
+
+            <article class="gateway-card gateway-card-wide glass-panel">
+              <h4>Model Traffic & Usage</h4>
+              <div id="gatewayLiveGraphs" class="live-traffic-container"></div>
+            </article>
+
+            <article class="gateway-card gateway-card-wide glass-panel">
+              <h4>Model Status Cards</h4>
+              <div id="dashModelStatusCards" class="model-status-grid"></div>
+            </article>
+
+            <article class="gateway-card gateway-card-wide">
+              <h4>Providers</h4>
+              <div id="gatewayProviders"></div>
+            </article>
+            <article class="gateway-card gateway-card-wide">
+              <h4>Accounts</h4>
+              <div id="gatewayAccounts"></div>
+            </article>
+            <article class="gateway-card gateway-card-wide">
+              <h4>Daily Usage</h4>
+              <div id="gatewayUsage"></div>
+            </article>
+            <article class="gateway-card gateway-card-wide">
+              <h4>Cost Analytics</h4>
+              <div id="gatewayCosts"></div>
+            </article>
+            <article class="gateway-card gateway-card-wide">
+              <h4>Provider Flow & Fallbacks</h4>
+              <div id="gatewayFlowViz" style="min-height: 120px; display: flex; flex-direction: column; gap: 10px;"></div>
+            </article>
+            <article class="gateway-card gateway-card-wide">
+              <h4>Key Rotation Status</h4>
+              <div id="gatewayRotationUI" style="min-height: 100px;"></div>
+            </article>
+            <article class="gateway-card gateway-card-wide">
+              <h4>Recent Requests</h4>
+              <div id="gatewayRequests"></div>
+            </article>
+            <article class="gateway-card gateway-card-wide">
+              <h4>Circuit Breakers</h4>
+              <div id="gatewayCircuits"></div>
+            </article>
+            <article class="gateway-card gateway-card-wide">
+              <h4>Benchmarks</h4>
+              <div id="gatewayBenchmarks"></div>
+            </article>
+            <article class="gateway-card gateway-card-wide">
+              <h4>Queue / Backpressure</h4>
+              <div id="gatewayQueue"></div>
+            </article>
+            <article class="gateway-card gateway-card-wide">
+              <h4>Capability Probes</h4>
+              <div id="gatewayCapabilityProbes"></div>
+            </article>
+            <article class="gateway-card gateway-card-wide">
+              <h4>Recent Traces</h4>
+              <div id="gatewayTraces"></div>
+            </article>
+            <article class="gateway-card gateway-card-wide">
+              <h4>Config Versions</h4>
+              <div id="gatewayConfigVersions"></div>
+            </article>
+            <article class="gateway-card gateway-card-wide">
+              <h4>Auth Backends</h4>
+              <div id="gatewayAuthBackends"></div>
+            </article>
+            <article class="gateway-card gateway-card-wide">
+              <h4>OAuth Accounts</h4>
+              <div id="gatewayOAuthAccounts"></div>
+            </article>
+            <article class="gateway-card gateway-card-wide">
+              <h4>OAuth Sessions</h4>
+              <div id="gatewayOAuthSessions"></div>
+            </article>
+            <article class="gateway-card gateway-card-wide">
+              <h4>OAuth Ecosystems</h4>
+              <div id="gatewayOAuthEcosystems" class="ecosystem-grid">
+                <article class="ecosystem-card ecosystem-google">
+                  <div class="ecosystem-head">
+                    <h5>Google Ecosystem</h5>
+                    <button
+                      id="oauthGoogleLoginBtn"
+                      class="secondary-button"
+                      type="button"
+                      onclick="window.location.assign('/admin/oauth/google/start?account_key=google-ui')"
+                    >
+                      Connect Google / Antigravity
+                    </button>
+                  </div>
+                  <div id="oauthGoogleSummary" class="ecosystem-summary"></div>
+                </article>
+                <article class="ecosystem-card ecosystem-github">
+                  <div class="ecosystem-head">
+                    <h5>GitHub Ecosystem</h5>
+                    <button
+                      id="oauthGithubLoginBtn"
+                      class="secondary-button"
+                      type="button"
+                      onclick="window.location.assign('/admin/oauth/github/start?account_key=github-ui')"
+                    >
+                      Connect GitHub
+                    </button>
+                  </div>
+                  <div id="oauthGithubSummary" class="ecosystem-summary"></div>
+                </article>
+              </div>
+            </article>
+            <article class="gateway-card gateway-card-wide">
+              <h4>Agents</h4>
+              <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+                <button id="agentsRescanBtn" class="secondary-button" type="button">Rescan Agents</button>
+                <button id="agentsImportAllBtn" class="secondary-button" type="button">Import All Skills</button>
+                <button id="agentsSyncEnabledBtn" class="secondary-button" type="button">Sync Enabled Agents</button>
+                <input id="agentsSearch" placeholder="Search agents..." style="min-width:220px;" />
+              </div>
+              <div id="gatewayAgents"></div>
+            </article>
+          </div>
+          <form id="addApiAccountForm" class="gateway-form">
+            <h4>Add API Key Account</h4>
+            <input id="gaProvider" placeholder="provider_id (e.g. groq)" required />
+            <input id="gaKey" placeholder="account key (e.g. acct-1)" required />
+            <input id="gaBackend" placeholder="auth backend key (optional)" />
+            <input id="gaLabel" placeholder="label" />
+            <input id="gaSecret" placeholder="api key" required />
+            <input id="gaReqQuota" placeholder="max requests/day (optional)" />
+            <input id="gaTokQuota" placeholder="max tokens/day (optional)" />
+            <button class="secondary-button" type="submit">Add Account</button>
+          </form>
+          <form id="importAgentForm" class="gateway-form">
+            <h4>Import Custom Agent</h4>
+            <input id="agentImportTitle" placeholder="title" required />
+            <input id="agentImportCategory" placeholder="category (e.g. custom)" required />
+            <textarea id="agentImportContent" placeholder="markdown agent definition" rows="6" required></textarea>
+            <button class="secondary-button" type="submit">Import Agent</button>
+          </form>
+        </section>
+
+        <section id="formSections" class="form-sections" aria-label="Configuration"></section>
+
+        <section class="env-panel">
+          <div class="section-heading">
+            <div>
+              <h3>Generated Env</h3>
+              <p>Read-only preview of the managed config file.</p>
+            </div>
+          </div>
+          <pre id="envPreview" class="env-preview"></pre>
+        </section>
+      </main>
+
+      <footer class="action-bar">
+        <div class="action-meta">
+          <strong id="dirtyState">No changes</strong>
+          <span id="configPath"></span>
+        </div>
+        <div id="messageArea" class="message-area"></div>
+        <div class="action-buttons">
+          <button id="validateButton" class="secondary-button" type="button">Validate</button>
+          <button id="applyButton" class="primary-button" type="button" disabled>Apply</button>
+        </div>
+      </footer>
+    </div>
+    <script src="/admin/assets/admin.js?v=20260530-agents-role-ui2"></script>
+  </body>
+</html>

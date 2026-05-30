@@ -1,0 +1,620 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1700" height="1100" viewBox="0 0 1700 1100" role="img" aria-label="Nexus Detailed Architecture &amp; Flow Diagram">
+  <defs>
+    <!-- Background Radial Glows for high-tech aesthetic -->
+    <radialGradient id="bg-glow" cx="50%" cy="50%" r="75%" fx="50%" fy="50%">
+      <stop offset="0%" stop-color="#140c1e"/>
+      <stop offset="50%" stop-color="#08070c"/>
+      <stop offset="100%" stop-color="#020204"/>
+    </radialGradient>
+
+    <!-- Card Background Gradient -->
+    <linearGradient id="card-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0d0d14" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#151421" stop-opacity="0.92"/>
+    </linearGradient>
+
+    <!-- Glow / Neon Drop Shadows -->
+    <filter id="glow-silver" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#9CA3AF" flood-opacity="0.3"/>
+    </filter>
+    <filter id="glow-crimson" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#EF4444" flood-opacity="0.45"/>
+    </filter>
+    <filter id="glow-indigo" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#5551FF" flood-opacity="0.45"/>
+    </filter>
+    <filter id="glow-emerald" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#10B981" flood-opacity="0.45"/>
+    </filter>
+    <filter id="glow-amber" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="5" flood-color="#F59E0B" flood-opacity="0.4"/>
+    </filter>
+    <filter id="glow-violet" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="#9333EA" flood-opacity="0.45"/>
+    </filter>
+
+    <!-- Connection Line Gradients -->
+    <linearGradient id="grad-silver-crimson" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#9CA3AF"/>
+      <stop offset="100%" stop-color="#EF4444"/>
+    </linearGradient>
+    <linearGradient id="grad-crimson-indigo" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#EF4444"/>
+      <stop offset="100%" stop-color="#5551FF"/>
+    </linearGradient>
+    <linearGradient id="grad-indigo-emerald" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5551FF"/>
+      <stop offset="100%" stop-color="#10B981"/>
+    </linearGradient>
+    <linearGradient id="grad-amber-silver" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#9CA3AF"/>
+    </linearGradient>
+    <linearGradient id="grad-violet-silver" x1="100%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" stop-color="#9CA3AF"/>
+      <stop offset="100%" stop-color="#9333EA"/>
+    </linearGradient>
+
+    <!-- Arrow Markers -->
+    <marker id="arrow-silver" markerWidth="8" markerHeight="8" refX="5" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#9CA3AF"/>
+    </marker>
+    <marker id="arrow-crimson" markerWidth="8" markerHeight="8" refX="5" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#EF4444"/>
+    </marker>
+    <marker id="arrow-indigo" markerWidth="8" markerHeight="8" refX="5" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#5551FF"/>
+    </marker>
+    <marker id="arrow-emerald" markerWidth="8" markerHeight="8" refX="5" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#10B981"/>
+    </marker>
+    <marker id="arrow-amber" markerWidth="8" markerHeight="8" refX="5" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#F59E0B"/>
+    </marker>
+    <marker id="arrow-violet" markerWidth="8" markerHeight="8" refX="5" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#9333EA"/>
+    </marker>
+
+    <!-- High-tech Grid Pattern -->
+    <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+      <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#1d1b2e" stroke-width="1" stroke-opacity="0.4"/>
+      <circle cx="0" cy="0" r="1.5" fill="#5551FF" fill-opacity="0.3"/>
+    </pattern>
+  </defs>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Outfit:wght@700;800;900&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap');
+
+    .title-text { font-family: 'Outfit', 'Inter', sans-serif; font-size: 34px; font-weight: 900; fill: #ffffff; letter-spacing: 1px; }
+    .subtitle-text { font-family: 'Inter', sans-serif; font-size: 14px; fill: #9CA3AF; font-weight: 500; }
+    .section-header { font-family: 'Outfit', 'Inter', sans-serif; font-size: 16px; font-weight: 800; fill: #E5E7EB; letter-spacing: 1.5px; text-transform: uppercase; }
+    .card-title { font-family: 'Outfit', 'Inter', sans-serif; font-size: 15px; font-weight: 700; }
+    .card-path { font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 11px; fill: #9CA3AF; font-weight: 500; }
+    .card-body { font-family: 'Inter', sans-serif; font-size: 12px; fill: #D1D5DB; line-height: 1.5; }
+    
+    .c-client { stroke: #9CA3AF; fill: url(#card-grad); filter: url(#glow-silver); stroke-width: 1.5; }
+    .c-gw { stroke: #EF4444; fill: url(#card-grad); filter: url(#glow-crimson); stroke-width: 1.5; }
+    .c-route { stroke: #5551FF; fill: url(#card-grad); filter: url(#glow-indigo); stroke-width: 1.5; }
+    .c-provider { stroke: #10B981; fill: url(#card-grad); filter: url(#glow-emerald); stroke-width: 1.5; }
+    .c-db { stroke: #F59E0B; fill: url(#card-grad); filter: url(#glow-amber); stroke-width: 1.5; }
+    .c-agent { stroke: #9333EA; fill: url(#card-grad); filter: url(#glow-violet); stroke-width: 1.5; }
+
+    .ico-client { fill: none; stroke: #9CA3AF; }
+    .ico-gw { fill: none; stroke: #EF4444; }
+    .ico-route { fill: none; stroke: #5551FF; }
+    .ico-provider { fill: none; stroke: #10B981; }
+    .ico-db { fill: none; stroke: #F59E0B; }
+    .ico-agent { fill: none; stroke: #9333EA; }
+
+    .flow-badge { fill: #EF4444; filter: drop-shadow(0 0 4px #EF4444); }
+    .flow-badge-text { font-family: 'Outfit', sans-serif; font-size: 13px; font-weight: 900; fill: #ffffff; text-anchor: middle; }
+    .flow-label { font-family: 'Inter', sans-serif; font-size: 11px; fill: #9CA3AF; font-weight: 600; }
+  </style>
+
+  <!-- Background -->
+  <rect width="1700" height="1100" fill="url(#bg-glow)"/>
+  <rect width="1700" height="1100" fill="url(#grid)"/>
+
+  <!-- ==================== HEADER SECTION ==================== -->
+  <g transform="translate(70, 50)">
+    <!-- Hexagonal Tech Logo -->
+    <path d="M 0,0 L 26,-15 L 52,0 L 52,30 L 26,45 L 0,30 Z" fill="none" stroke="#EF4444" stroke-width="3" filter="drop-shadow(0 0 8px #EF4444)"/>
+    <path d="M 10,6 L 26,-3 L 42,6 L 42,24 L 26,33 L 10,24 Z" fill="none" stroke="#9CA3AF" stroke-width="1.5"/>
+    <polygon points="26,10 31,18 21,18" fill="#5551FF" filter="drop-shadow(0 0 3px #5551FF)"/>
+    
+    <text x="75" y="15" class="title-text">NEXUS UNIVERSAL AI GATEWAY</text>
+    <text x="75" y="36" class="subtitle-text">Local-First Multi-Provider AI Routing Router, Account Pools &amp; Real-time Agent Runtime for Claude Code</text>
+  </g>
+
+  <!-- ==================== COLUMN 1: CLIENTS / INGRESS LAYER ==================== -->
+  <text x="70" y="140" class="section-header">1. Client / Ingress Layer</text>
+
+  <!-- Client Applications -->
+  <g transform="translate(70, 160)">
+    <rect class="c-client" width="330" height="130" rx="12"/>
+    <rect x="15" y="15" width="36" height="36" rx="8" fill="#9CA3AF" fill-opacity="0.1"/>
+    <!-- Computer Icon -->
+    <path class="ico-client" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M 20,24 H 46 V 38 H 20 Z M 25,38 L 22,43 H 44 L 41,38"/>
+    <text x="65" y="28" fill="#FFFFFF" class="card-title">Client Applications</text>
+    <text x="65" y="44" class="card-path">Claude Code CLI | IDE Plugins</text>
+    <text x="20" y="78" class="card-body">• standard /v1/messages requests</text>
+    <text x="20" y="96" class="card-body">• SSE stream consumption &amp; parsing</text>
+    <text x="20" y="114" class="card-body">• Anthropic SDK headers integration</text>
+  </g>
+
+  <!-- CLI Launcher -->
+  <g transform="translate(70, 310)">
+    <rect class="c-client" width="330" height="130" rx="12"/>
+    <rect x="15" y="15" width="36" height="36" rx="8" fill="#9CA3AF" fill-opacity="0.1"/>
+    <!-- Terminal Icon -->
+    <path class="ico-client" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M 20,21 L 28,27 L 20,33 M 31,33 H 43"/>
+    <text x="65" y="28" fill="#FFFFFF" class="card-title">fcc-claude CLI Launcher</text>
+    <text x="65" y="44" class="card-path">cli/entrypoints.py &amp; manager.py</text>
+    <text x="20" y="78" class="card-body">• Dynamically sets local ANTHROPIC_BASE_URL</text>
+    <text x="20" y="96" class="card-body">• Spawns wrapped Claude process safely</text>
+    <text x="20" y="114" class="card-body">• Enforces local configuration overrides</text>
+  </g>
+
+  <!-- Bot Ingress -->
+  <g transform="translate(70, 460)">
+    <rect class="c-client" width="330" height="130" rx="12"/>
+    <rect x="15" y="15" width="36" height="36" rx="8" fill="#9CA3AF" fill-opacity="0.1"/>
+    <!-- Overlapping Messages Icon -->
+    <path class="ico-client" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M 21,23 H 41 A 2,2 0 0 1 43,25 V 35 A 2,2 0 0 1 41,37 H 29 L 21,43 V 37 A 2,2 0 0 1 19,35 V 25 A 2,2 0 0 1 21,23 Z"/>
+    <text x="65" y="28" fill="#FFFFFF" class="card-title">Bot Ingress &amp; Chat</text>
+    <text x="65" y="44" class="card-path">messaging/platforms/*</text>
+    <text x="20" y="78" class="card-body">• Telegram and Discord platform adapters</text>
+    <text x="20" y="96" class="card-body">• Voice-note parsing (Whisper via NIM)</text>
+    <text x="20" y="114" class="card-body">• Session mapping &amp; conversation context</text>
+  </g>
+
+  <!-- Admin UI Dashboard -->
+  <g transform="translate(70, 610)">
+    <rect class="c-db" width="330" height="130" rx="12"/>
+    <rect x="15" y="15" width="36" height="36" rx="8" fill="#F59E0B" fill-opacity="0.1"/>
+    <!-- Dashboard GUI Icon -->
+    <path class="ico-db" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M 20,22 H 44 V 42 H 20 Z M 20,32 H 44 M 32,32 V 42"/>
+    <text x="65" y="28" fill="#F59E0B" class="card-title">Admin Dashboard UI</text>
+    <text x="65" y="44" class="card-path">api/admin_static/* &amp; routes</text>
+    <text x="20" y="78" class="card-body">• Live request metrics &amp; latency tracing</text>
+    <text x="20" y="96" class="card-body">• Provider enables, weighting, &amp; settings</text>
+    <text x="20" y="114" class="card-body">• Account pools / encrypted key entry</text>
+  </g>
+
+
+  <!-- ==================== COLUMN 2: INGESTION & LIFECYCLE ==================== -->
+  <text x="470" y="140" class="section-header">2. Ingestion &amp; Service Layer</text>
+
+  <!-- FastAPI Gateway -->
+  <g transform="translate(470, 160)">
+    <rect class="c-gw" width="330" height="130" rx="12"/>
+    <rect x="15" y="15" width="36" height="36" rx="8" fill="#EF4444" fill-opacity="0.1"/>
+    <!-- Server Rack Icon -->
+    <path class="ico-gw" stroke-width="2" d="M 18,21 H 46 M 18,27 H 46 M 18,33 H 46 M 18,39 H 46 M 22,21 V 39 M 42,21 V 39"/>
+    <text x="65" y="28" fill="#EF4444" class="card-title">FastAPI Web Server</text>
+    <text x="65" y="44" class="card-path">api/app.py &amp; routes.py</text>
+    <text x="20" y="78" class="card-body">• Proxy routes: /v1/messages, /v1/models</text>
+    <text x="20" y="96" class="card-body">• OpenAI format bridge (/v1/chat/completions)</text>
+    <text x="20" y="114" class="card-body">• Prometheus metrics endpoint exposed</text>
+  </g>
+
+  <!-- ClaudeProxyService -->
+  <g transform="translate(470, 310)">
+    <rect class="c-gw" width="330" height="130" rx="12"/>
+    <rect x="15" y="15" width="36" height="36" rx="8" fill="#EF4444" fill-opacity="0.1"/>
+    <!-- Gear Icon -->
+    <circle cx="33" cy="33" r="6" class="ico-gw" stroke-width="2"/>
+    <path class="ico-gw" stroke-width="2" d="M 33,20 V 24 M 33,42 V 45 M 21,33 H 24 M 42,33 H 45 M 24,24 L 27,27 M 37,37 L 40,40 M 24,40 L 27,37 M 37,24 L 40,27"/>
+    <text x="65" y="28" fill="#EF4444" class="card-title">ClaudeProxyService</text>
+    <text x="65" y="44" class="card-path">api/services.py &amp; runtime.py</text>
+    <text x="20" y="78" class="card-body">• Manages upstream dispatch / fallbacks</text>
+    <text x="20" y="96" class="card-body">• Handles prompt caching setup &amp; keys</text>
+    <text x="20" y="114" class="card-body">• Token accounting &amp; pricing evaluation</text>
+  </g>
+
+  <!-- Stream Resilience & SSE -->
+  <g transform="translate(470, 460)">
+    <rect class="c-gw" width="330" height="130" rx="12"/>
+    <rect x="15" y="15" width="36" height="36" rx="8" fill="#EF4444" fill-opacity="0.1"/>
+    <!-- Stream Waves Icon -->
+    <path class="ico-gw" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M 18,32 C 22,20 26,44 30,32 C 34,20 38,44 42,32 H 46"/>
+    <text x="65" y="28" fill="#EF4444" class="card-title">Stream Resilience &amp; SSE</text>
+    <text x="65" y="44" class="card-path">core/anthropic/sse.py &amp; stream_resilience.py</text>
+    <text x="20" y="78" class="card-body">• Stream recovery &amp; token buffering</text>
+    <text x="20" y="96" class="card-body">• Prevents disconnects using simulated events</text>
+    <text x="20" y="114" class="card-body">• Filters thinking blocks / stream syntax</text>
+  </g>
+
+  <!-- Local Web Tools -->
+  <g transform="translate(470, 610)">
+    <rect class="c-gw" width="330" height="130" rx="12"/>
+    <rect x="15" y="15" width="36" height="36" rx="8" fill="#EF4444" fill-opacity="0.1"/>
+    <!-- Globe/Search Icon -->
+    <circle cx="30" cy="30" r="10" class="ico-gw" stroke-width="2"/>
+    <path class="ico-gw" stroke-width="1.5" d="M 20,30 H 40 M 30,20 V 40"/>
+    <path class="ico-gw" stroke-width="2.5" stroke-linecap="round" d="M 37,37 L 45,45"/>
+    <text x="65" y="28" fill="#EF4444" class="card-title">Local Web Tools</text>
+    <text x="65" y="44" class="card-path">api/web_server_tools.py &amp; web_tools/</text>
+    <text x="20" y="78" class="card-body">• Web scraping &amp; remote document fetch</text>
+    <text x="20" y="96" class="card-body">• Private network protection isolation</text>
+    <text x="20" y="114" class="card-body">• Dynamic tool injections on proxy requests</text>
+  </g>
+
+
+  <!-- ==================== COLUMN 3: ROUTING & RELIABILITY ==================== -->
+  <text x="870" y="140" class="section-header">3. Router &amp; Reliability (api/gateway/)</text>
+
+  <!-- Model Router -->
+  <g transform="translate(870, 160)">
+    <rect class="c-route" width="330" height="120" rx="12"/>
+    <rect x="15" y="15" width="36" height="36" rx="8" fill="#5551FF" fill-opacity="0.1"/>
+    <!-- Route Branch Icon -->
+    <path class="ico-route" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M 18,32 H 28 L 36,24 H 44 M 28,32 L 36,40 H 44"/>
+    <text x="65" y="28" fill="#FFFFFF" class="card-title">Model Router</text>
+    <text x="65" y="44" class="card-path">api/model_router.py</text>
+    <text x="20" y="78" class="card-body">• Decodes Opus/Sonnet/Haiku request tags</text>
+    <text x="20" y="96" class="card-body">• Directs requests based on model configurations</text>
+  </g>
+
+  <!-- Request Queue Engine -->
+  <g transform="translate(870, 300)">
+    <rect class="c-route" width="330" height="120" rx="12"/>
+    <rect x="15" y="15" width="36" height="36" rx="8" fill="#5551FF" fill-opacity="0.1"/>
+    <!-- Queue Icon -->
+    <path class="ico-route" stroke-width="2" stroke-linecap="round" d="M 18,22 H 46 M 22,28 H 46 M 26,34 H 46 M 30,40 H 46"/>
+    <text x="65" y="28" fill="#FFFFFF" class="card-title">Request Admission Queue</text>
+    <text x="65" y="44" class="card-path">gateway/request_queue.py</text>
+    <text x="20" y="78" class="card-body">• Controls concurrency &amp; rate limits</text>
+    <text x="20" y="96" class="card-body">• Backpressure protection &amp; client buffering</text>
+  </g>
+
+  <!-- Account Pool & Rotation -->
+  <g transform="translate(870, 440)">
+    <rect class="c-route" width="330" height="130" rx="12"/>
+    <rect x="15" y="15" width="36" height="36" rx="8" fill="#5551FF" fill-opacity="0.1"/>
+    <!-- Refresh Cycle Icon -->
+    <path class="ico-route" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M 20,32 A 12,12 0 1 1 32,44 M 32,44 L 28,40 M 32,44 L 36,40"/>
+    <circle cx="32" cy="32" r="4" class="ico-route" stroke-width="2"/>
+    <text x="65" y="28" fill="#FFFFFF" class="card-title">Account Pool &amp; Rotation</text>
+    <text x="65" y="44" class="card-path">gateway/pool.py &amp; router.py</text>
+    <text x="20" y="78" class="card-body">• Rotates credentials (Round-Robin / Sticky)</text>
+    <text x="20" y="96" class="card-body">• Evaluates RPM / TPM usage counters</text>
+    <text x="20" y="114" class="card-body">• Keeps cooling states on API rate-limits</text>
+  </g>
+
+  <!-- Circuit Breaker & Health Engine -->
+  <g transform="translate(870, 590)">
+    <rect class="c-route" width="330" height="120" rx="12"/>
+    <rect x="15" y="15" width="36" height="36" rx="8" fill="#5551FF" fill-opacity="0.1"/>
+    <!-- Heartbeat Icon -->
+    <path class="ico-route" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M 18,32 H 24 L 27,20 L 31,44 L 34,30 L 37,35 H 46"/>
+    <text x="65" y="28" fill="#FFFFFF" class="card-title">Circuit Breaker &amp; Health</text>
+    <text x="65" y="44" class="card-path">circuit_breaker.py &amp; health_engine.py</text>
+    <text x="20" y="78" class="card-body">• Bypasses downed endpoints automatically</text>
+    <text x="20" y="96" class="card-body">• Performs capability probes &amp; health scoring</text>
+  </g>
+
+  <!-- SQLite Database -->
+  <g transform="translate(870, 730)">
+    <rect class="c-db" width="330" height="130" rx="12"/>
+    <rect x="15" y="15" width="36" height="36" rx="8" fill="#F59E0B" fill-opacity="0.1"/>
+    <!-- Database Cylinder Icon -->
+    <ellipse cx="32" cy="24" rx="12" ry="4" class="ico-db" stroke-width="2"/>
+    <path class="ico-db" stroke-width="2" d="M 20,24 V 32 C 20,34 26,36 32,36 C 38,36 44,34 44,32 V 24"/>
+    <path class="ico-db" stroke-width="2" d="M 20,32 V 40 C 20,42 26,44 32,44 C 38,44 44,42 44,40 V 32"/>
+    <text x="65" y="28" fill="#F59E0B" class="card-title">Persistence Engine (SQLite)</text>
+    <text x="65" y="44" class="card-path">gateway.db (storage.py &amp; db.py)</text>
+    <text x="20" y="78" class="card-body">• Stores credentials (AES encrypted)</text>
+    <text x="20" y="96" class="card-body">• Traces, telemetry, &amp; metrics collection</text>
+    <text x="20" y="114" class="card-body">• Database migrations handled via Alembic</text>
+  </g>
+
+
+  <!-- ==================== COLUMN 4: ADAPTERS & SYNC ==================== -->
+  <text x="1270" y="140" class="section-header">4. Adapters &amp; Providers</text>
+
+  <!-- Protocol Normalizer Core -->
+  <g transform="translate(1270, 160)">
+    <rect class="c-provider" width="330" height="130" rx="12"/>
+    <rect x="15" y="15" width="36" height="36" rx="8" fill="#10B981" fill-opacity="0.1"/>
+    <!-- Overlapping Blocks Icon -->
+    <rect x="20" y="24" width="16" height="16" rx="3" class="ico-provider" stroke-width="2"/>
+    <rect x="28" y="16" width="16" height="16" rx="3" fill="#10B981" fill-opacity="0.2" class="ico-provider" stroke-width="2"/>
+    <text x="65" y="28" fill="#10B981" class="card-title">Protocol Normalizer Core</text>
+    <text x="65" y="44" class="card-path">core/anthropic/conversion.py</text>
+    <text x="20" y="78" class="card-body">• Translates thinking / reasoning blocks</text>
+    <text x="20" y="96" class="card-body">• Normalizes API parameters &amp; responses</text>
+    <text x="20" y="114" class="card-body">• Tool calls and error format conversion</text>
+  </g>
+
+  <!-- Provider Registry -->
+  <g transform="translate(1270, 310)">
+    <rect class="c-provider" width="330" height="120" rx="12"/>
+    <rect x="15" y="15" width="36" height="36" rx="8" fill="#10B981" fill-opacity="0.1"/>
+    <!-- Registry Nodes Icon -->
+    <circle cx="24" cy="24" r="4" class="ico-provider" stroke-width="2"/>
+    <circle cx="40" cy="24" r="4" class="ico-provider" stroke-width="2"/>
+    <circle cx="32" cy="38" r="4" class="ico-provider" stroke-width="2"/>
+    <path d="M 24,24 L 32,38 L 40,24" class="ico-provider" stroke-width="1.5"/>
+    <text x="65" y="28" fill="#10B981" class="card-title">Provider Registry</text>
+    <text x="65" y="44" class="card-path">providers/registry.py</text>
+    <text x="20" y="78" class="card-body">• Maps names to provider transport adapters</text>
+    <text x="20" y="96" class="card-body">• Dynamically sets up model registry models</text>
+  </g>
+
+  <!-- Upstream API Providers -->
+  <g transform="translate(1270, 450)">
+    <rect class="c-provider" width="330" height="230" rx="12"/>
+    <rect x="15" y="15" width="36" height="36" rx="8" fill="#10B981" fill-opacity="0.1"/>
+    <!-- Cloud Icon -->
+    <path class="ico-provider" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M 22,36 A 5,5 0 0 1 20,28 A 6,6 0 0 1 32,22 A 8,8 0 0 1 42,28 A 5,5 0 0 1 44,36 Z"/>
+    <text x="65" y="28" fill="#10B981" class="card-title">Upstream APIs &amp; Adapters</text>
+    <text x="65" y="44" class="card-path">providers/* &amp; External APIs</text>
+    
+    <rect x="20" y="78" width="135" height="42" rx="6" fill="#10B981" fill-opacity="0.08" stroke="#10B981" stroke-width="1"/>
+    <text x="87" y="96" fill="#D1D5DB" font-family="'Outfit', sans-serif" font-size="11" font-weight="700" text-anchor="middle">CLOUD APIs</text>
+    <text x="87" y="112" fill="#9CA3AF" font-family="'Inter', sans-serif" font-size="9" text-anchor="middle">NIM, DeepSeek, Cerebras, OpenAI</text>
+
+    <rect x="175" y="78" width="135" height="42" rx="6" fill="#10B981" fill-opacity="0.08" stroke="#10B981" stroke-width="1"/>
+    <text x="242" y="96" fill="#D1D5DB" font-family="'Outfit', sans-serif" font-size="11" font-weight="700" text-anchor="middle">LOCAL GATEWAYS</text>
+    <text x="242" y="112" fill="#9CA3AF" font-family="'Inter', sans-serif" font-size="9" text-anchor="middle">Ollama, LM Studio, llamacpp</text>
+
+    <text x="20" y="145" class="card-body" font-weight="600">• Supported cloud providers:</text>
+    <text x="30" y="163" class="card-body" font-size="11" fill="#9CA3AF">Anthropic, NVIDIA NIM, DeepSeek, Cerebras,</text>
+    <text x="30" y="179" class="card-body" font-size="11" fill="#9CA3AF">Groq, Mistral, Cohere, Wafer, GitHub Models,</text>
+    <text x="30" y="195" class="card-body" font-size="11" fill="#9CA3AF">OpenRouter, Kimi, OpenAI, Antigravity</text>
+    <text x="20" y="214" class="card-body" font-weight="600">• Enforces fallback chains / retries</text>
+  </g>
+
+  <!-- Agent & Skills Sync -->
+  <g transform="translate(1270, 700)">
+    <rect class="c-agent" width="330" height="160" rx="12"/>
+    <rect x="15" y="15" width="36" height="36" rx="8" fill="#9333EA" fill-opacity="0.1"/>
+    <!-- Sync Arrows Icon -->
+    <path class="ico-agent" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M 20,32 A 12,12 0 0 1 38,26 L 42,30 M 42,30 H 34 M 42,30 V 22"/>
+    <path class="ico-agent" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M 44,32 A 12,12 0 0 1 26,38 L 22,34 M 22,34 H 30 M 22,34 V 42"/>
+    <text x="65" y="28" fill="#A78BFA" class="card-title">Agents &amp; Skills Catalog</text>
+    <text x="65" y="44" class="card-path">agents/loaders, sync, &amp; registry</text>
+    <text x="20" y="78" class="card-body">• Parses JSON manifests of agent skills</text>
+    <text x="20" y="96" class="card-body">• Role-level switches &amp; permissions toggle</text>
+    <text x="20" y="114" class="card-body">• Syncs enabled sub-agents / tools directly</text>
+    <text x="20" y="132" class="card-body" font-weight="700" fill="#A78BFA">  to target directory (e.g. ~/.claude/agents)</text>
+  </g>
+
+
+  <!-- ==================== FLOW CONNECTORS (CURVES) ==================== -->
+  
+  <!-- Flow 1: CLI launcher overrides and spawns client app -->
+  <path d="M 235,310 V 290" fill="none" stroke="#9CA3AF" stroke-width="2" stroke-dasharray="3,3" marker-end="url(#arrow-silver)"/>
+  
+  <!-- Flow 2: Client Apps to FastAPI Server -->
+  <path d="M 400,225 H 470" fill="none" stroke="url(#grad-silver-crimson)" stroke-width="3" marker-end="url(#arrow-crimson)"/>
+  
+  <!-- Flow 3: Telegram/Discord to FastAPI Server -->
+  <path d="M 400,525 C 440,525 430,300 465,245" fill="none" stroke="url(#grad-silver-crimson)" stroke-width="2" stroke-dasharray="3,3" marker-end="url(#arrow-crimson)"/>
+  
+  <!-- Flow 4: FastAPI Server to ClaudeProxyService -->
+  <path d="M 635,290 V 310" fill="none" stroke="#EF4444" stroke-width="3" marker-end="url(#arrow-crimson)"/>
+  
+  <!-- Flow 5: ClaudeProxyService to Stream Resilience & SSE -->
+  <path d="M 635,440 V 460" fill="none" stroke="#EF4444" stroke-width="2.5" marker-end="url(#arrow-crimson)"/>
+  
+  <!-- Flow 6: Local Web Tools communicate with Proxy Service -->
+  <path d="M 635,610 V 590 H 590 V 445" fill="none" stroke="#EF4444" stroke-width="2" marker-end="url(#arrow-crimson)"/>
+
+  <!-- Flow 7: ClaudeProxyService resolves model details via Model Router -->
+  <path d="M 800,375 C 835,375 835,220 865,220" fill="none" stroke="url(#grad-crimson-indigo)" stroke-width="2.5" marker-end="url(#arrow-indigo)"/>
+
+  <!-- Flow 8: Model Router passes target to Admission Queue -->
+  <path d="M 1035,280 V 300" fill="none" stroke="#5551FF" stroke-width="2.5" marker-end="url(#arrow-indigo)"/>
+
+  <!-- Flow 9: Request Queue forwards request to Rotation & Pools -->
+  <path d="M 1035,420 V 440" fill="none" stroke="#5551FF" stroke-width="3" marker-end="url(#arrow-indigo)"/>
+
+  <!-- Flow 10: Pools checks health state & circuit breaker -->
+  <path d="M 1035,570 V 590" fill="none" stroke="#5551FF" stroke-width="2.5" marker-end="url(#arrow-indigo)"/>
+
+  <!-- Flow 11: Health engine logs telemetry & status to SQLite -->
+  <path d="M 1035,710 V 730" fill="none" stroke="#5551FF" stroke-width="2" marker-end="url(#arrow-indigo)"/>
+
+  <!-- Flow 12: Pools forwards query payload to Protocol Normalizer Core -->
+  <path d="M 1200,505 C 1235,505 1235,225 1265,225" fill="none" stroke="url(#grad-indigo-emerald)" stroke-width="3" marker-end="url(#arrow-emerald)"/>
+
+  <!-- Flow 13: Normalizer loads credentials/driver configuration via Provider Registry -->
+  <path d="M 1435,290 V 310" fill="none" stroke="#10B981" stroke-width="2.5" marker-end="url(#arrow-emerald)"/>
+
+  <!-- Flow 14: Provider Registry initializes Adapter to Upstream Cloud/Local APIs -->
+  <path d="M 1435,430 V 450" fill="none" stroke="#10B981" stroke-width="3" marker-end="url(#arrow-emerald)"/>
+
+  <!-- Flow 15: DB provides telemetry / metrics and logs to Admin Dashboard -->
+  <path d="M 870,795 C 635,795 635,675 405,675" fill="none" stroke="url(#grad-amber-silver)" stroke-width="2" stroke-dasharray="4,4" marker-end="url(#arrow-silver)"/>
+
+  <!-- Flow 16: Admin Dashboard updates settings and overrides FastAPI config hot reload -->
+  <path d="M 235,610 V 580 H 420 V 255" fill="none" stroke="#EF4444" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#arrow-crimson)"/>
+
+  <!-- Flow 17: Agent Sync tool installs directly into local Claude CLI folder -->
+  <path d="M 1435,860 C 1435,975 850,975 235,455" fill="none" stroke="url(#grad-violet-silver)" stroke-width="2" stroke-dasharray="5,5" marker-end="url(#arrow-silver)"/>
+
+
+  <!-- ==================== FLOW SEQUENCE BADGES ==================== -->
+  
+  <!-- Badge 1: Startup Launcher -->
+  <g transform="translate(195, 275)">
+    <circle cx="10" cy="10" r="10" class="flow-badge"/>
+    <text x="10" y="14" class="flow-badge-text">1</text>
+  </g>
+  
+  <!-- Badge 2: API Call Ingress -->
+  <g transform="translate(415, 195)">
+    <circle cx="10" cy="10" r="10" class="flow-badge"/>
+    <text x="10" y="14" class="flow-badge-text">2</text>
+  </g>
+
+  <!-- Badge 3: Lifecycle Management -->
+  <g transform="translate(615, 275)">
+    <circle cx="10" cy="10" r="10" class="flow-badge"/>
+    <text x="10" y="14" class="flow-badge-text">3</text>
+  </g>
+
+  <!-- Badge 4: Model Resolution -->
+  <g transform="translate(820, 260)">
+    <circle cx="10" cy="10" r="10" class="flow-badge"/>
+    <text x="10" y="14" class="flow-badge-text">4</text>
+  </g>
+
+  <!-- Badge 5: Concurrency Gating -->
+  <g transform="translate(1025, 265)">
+    <circle cx="10" cy="10" r="10" class="flow-badge"/>
+    <text x="10" y="14" class="flow-badge-text">5</text>
+  </g>
+
+  <!-- Badge 6: Account Rotation & strategies -->
+  <g transform="translate(1025, 405)">
+    <circle cx="10" cy="10" r="10" class="flow-badge"/>
+    <text x="10" y="14" class="flow-badge-text">6</text>
+  </g>
+
+  <!-- Badge 7: Health & Circuit Breaker Verification -->
+  <g transform="translate(1025, 555)">
+    <circle cx="10" cy="10" r="10" class="flow-badge"/>
+    <text x="10" y="14" class="flow-badge-text">7</text>
+  </g>
+
+  <!-- Badge 8: SQLite database writing -->
+  <g transform="translate(1025, 715)">
+    <circle cx="10" cy="10" r="10" class="flow-badge"/>
+    <text x="10" y="14" class="flow-badge-text">8</text>
+  </g>
+
+  <!-- Badge 9: API Payload Normalization -->
+  <g transform="translate(1220, 310)">
+    <circle cx="10" cy="10" r="10" class="flow-badge"/>
+    <text x="10" y="14" class="flow-badge-text">9</text>
+  </g>
+
+  <!-- Badge 10: Upstream Dispatch -->
+  <g transform="translate(1425, 415)">
+    <circle cx="10" cy="10" r="10" class="flow-badge"/>
+    <text x="10" y="14" class="flow-badge-text">10</text>
+  </g>
+
+  <!-- Badge 11: Web tools injection -->
+  <g transform="translate(565, 500)">
+    <circle cx="10" cy="10" r="10" class="flow-badge"/>
+    <text x="10" y="14" class="flow-badge-text">11</text>
+  </g>
+
+  <!-- Badge 12: Dashboard telemetry updates -->
+  <g transform="translate(620, 770)">
+    <circle cx="10" cy="10" r="10" class="flow-badge"/>
+    <text x="10" y="14" class="flow-badge-text">12</text>
+  </g>
+
+  <!-- Badge 13: Agent Catalog direct Sync -->
+  <g transform="translate(850, 930)">
+    <circle cx="10" cy="10" r="10" class="flow-badge"/>
+    <text x="10" y="14" class="flow-badge-text">13</text>
+  </g>
+
+
+  <!-- ==================== FOOTER, LEGEND, & STEPS TIMELINE ==================== -->
+  
+  <line x1="70" y1="890" x2="1630" y2="890" stroke="#1d1b2e" stroke-width="2"/>
+
+  <!-- Legend -->
+  <g transform="translate(70, 915)">
+    <text class="flow-label" x="0" y="0">SYSTEM ZONES:</text>
+    
+    <rect x="0" y="12" width="16" height="16" rx="4" fill="#9CA3AF" fill-opacity="0.2" stroke="#9CA3AF" stroke-width="1.5"/>
+    <text x="24" y="24" fill="#D1D5DB" font-family="'Inter', sans-serif" font-size="12">Clients / Ingress</text>
+
+    <rect x="160" y="12" width="16" height="16" rx="4" fill="#EF4444" fill-opacity="0.2" stroke="#EF4444" stroke-width="1.5"/>
+    <text x="184" y="24" fill="#D1D5DB" font-family="'Inter', sans-serif" font-size="12">Ingestion / Lifecycle</text>
+
+    <rect x="350" y="12" width="16" height="16" rx="4" fill="#5551FF" fill-opacity="0.2" stroke="#5551FF" stroke-width="1.5"/>
+    <text x="374" y="24" fill="#D1D5DB" font-family="'Inter', sans-serif" font-size="12">Router / Reliability</text>
+
+    <rect x="520" y="12" width="16" height="16" rx="4" fill="#10B981" fill-opacity="0.2" stroke="#10B981" stroke-width="1.5"/>
+    <text x="544" y="24" fill="#D1D5DB" font-family="'Inter', sans-serif" font-size="12">Adapters &amp; Normalize</text>
+
+    <rect x="710" y="12" width="16" height="16" rx="4" fill="#F59E0B" fill-opacity="0.2" stroke="#F59E0B" stroke-width="1.5"/>
+    <text x="734" y="24" fill="#D1D5DB" font-family="'Inter', sans-serif" font-size="12">SQLite DB / Metrics</text>
+
+    <rect x="890" y="12" width="16" height="16" rx="4" fill="#9333EA" fill-opacity="0.2" stroke="#9333EA" stroke-width="1.5"/>
+    <text x="914" y="24" fill="#D1D5DB" font-family="'Inter', sans-serif" font-size="12">Agent Sync Engine</text>
+  </g>
+
+  <!-- Flow Timeline Sequence -->
+  <g transform="translate(70, 975)">
+    <text class="flow-label" x="0" y="0">REQUEST / RESPONSE LIFECYCLE PATHWAYS:</text>
+
+    <g transform="translate(0, 15)">
+      <!-- Step 1 -->
+      <circle cx="10" cy="15" r="9" fill="#EF4444"/>
+      <text x="10" y="19" font-family="'Outfit', sans-serif" font-size="10" font-weight="900" fill="#ffffff" text-anchor="middle">1</text>
+      <text x="25" y="18" fill="#D1D5DB" font-family="'Inter', sans-serif" font-size="11" font-weight="600">Start CLI (Launcher)</text>
+
+      <!-- Step 2 -->
+      <circle cx="170" cy="15" r="9" fill="#EF4444"/>
+      <text x="170" y="19" font-family="'Outfit', sans-serif" font-size="10" font-weight="900" fill="#ffffff" text-anchor="middle">2</text>
+      <text x="185" y="18" fill="#D1D5DB" font-family="'Inter', sans-serif" font-size="11" font-weight="600">FastAPI Ingests</text>
+
+      <!-- Step 3 -->
+      <circle cx="310" cy="15" r="9" fill="#EF4444"/>
+      <text x="310" y="19" font-family="'Outfit', sans-serif" font-size="10" font-weight="900" fill="#ffffff" text-anchor="middle">3</text>
+      <text x="325" y="18" fill="#D1D5DB" font-family="'Inter', sans-serif" font-size="11" font-weight="600">Proxy Lifecycle Init</text>
+
+      <!-- Step 4 -->
+      <circle cx="475" cy="15" r="9" fill="#EF4444"/>
+      <text x="475" y="19" font-family="'Outfit', sans-serif" font-size="10" font-weight="900" fill="#ffffff" text-anchor="middle">4</text>
+      <text x="490" y="18" fill="#D1D5DB" font-family="'Inter', sans-serif" font-size="11" font-weight="600">Model Routing Map</text>
+
+      <!-- Step 5 -->
+      <circle cx="635" cy="15" r="9" fill="#EF4444"/>
+      <text x="635" y="19" font-family="'Outfit', sans-serif" font-size="10" font-weight="900" fill="#ffffff" text-anchor="middle">5</text>
+      <text x="650" y="18" fill="#D1D5DB" font-family="'Inter', sans-serif" font-size="11" font-weight="600">Queue Admission</text>
+
+      <!-- Step 6 -->
+      <circle cx="785" cy="15" r="9" fill="#EF4444"/>
+      <text x="785" y="19" font-family="'Outfit', sans-serif" font-size="10" font-weight="900" fill="#ffffff" text-anchor="middle">6</text>
+      <text x="800" y="18" fill="#D1D5DB" font-family="'Inter', sans-serif" font-size="11" font-weight="600">Account Selection</text>
+
+      <!-- Step 7 -->
+      <circle cx="945" cy="15" r="9" fill="#EF4444"/>
+      <text x="945" y="19" font-family="'Outfit', sans-serif" font-size="10" font-weight="900" fill="#ffffff" text-anchor="middle">7</text>
+      <text x="960" y="18" fill="#D1D5DB" font-family="'Inter', sans-serif" font-size="11" font-weight="600">Circuit Breaker / Health</text>
+    </g>
+
+    <g transform="translate(0, 45)">
+      <!-- Step 8 -->
+      <circle cx="10" cy="15" r="9" fill="#EF4444"/>
+      <text x="10" y="19" font-family="'Outfit', sans-serif" font-size="10" font-weight="900" fill="#ffffff" text-anchor="middle">8</text>
+      <text x="25" y="18" fill="#D1D5DB" font-family="'Inter', sans-serif" font-size="11" font-weight="600">SQLite Log Audit</text>
+
+      <!-- Step 9 -->
+      <circle cx="170" cy="15" r="9" fill="#EF4444"/>
+      <text x="170" y="19" font-family="'Outfit', sans-serif" font-size="10" font-weight="900" fill="#ffffff" text-anchor="middle">9</text>
+      <text x="185" y="18" fill="#D1D5DB" font-family="'Inter', sans-serif" font-size="11" font-weight="600">Payload Normalization</text>
+
+      <!-- Step 10 -->
+      <circle cx="350" cy="15" r="9" fill="#EF4444"/>
+      <text x="350" y="19" font-family="'Outfit', sans-serif" font-size="10" font-weight="900" fill="#ffffff" text-anchor="middle">10</text>
+      <text x="365" y="18" fill="#D1D5DB" font-family="'Inter', sans-serif" font-size="11" font-weight="600">Upstream API Dispatch</text>
+
+      <!-- Step 11 -->
+      <circle cx="530" cy="15" r="9" fill="#EF4444"/>
+      <text x="530" y="19" font-family="'Outfit', sans-serif" font-size="10" font-weight="900" fill="#ffffff" text-anchor="middle">11</text>
+      <text x="545" y="18" fill="#D1D5DB" font-family="'Inter', sans-serif" font-size="11" font-weight="600">Tool Calls Injected</text>
+
+      <!-- Step 12 -->
+      <circle cx="690" cy="15" r="9" fill="#EF4444"/>
+      <text x="690" y="19" font-family="'Outfit', sans-serif" font-size="10" font-weight="900" fill="#ffffff" text-anchor="middle">12</text>
+      <text x="705" y="18" fill="#D1D5DB" font-family="'Inter', sans-serif" font-size="11" font-weight="600">Dashboard UI Stream</text>
+
+      <!-- Step 13 -->
+      <circle cx="875" cy="15" r="9" fill="#EF4444"/>
+      <text x="875" y="19" font-family="'Outfit', sans-serif" font-size="10" font-weight="900" fill="#ffffff" text-anchor="middle">13</text>
+      <text x="890" y="18" fill="#D1D5DB" font-family="'Inter', sans-serif" font-size="11" font-weight="600">Agent Skills Synced</text>
+    </g>
+  </g>
+</svg>
