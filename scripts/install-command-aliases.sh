@@ -16,9 +16,9 @@ fi
 
 cat >> "${TARGET_SHELL_FILE}" <<'EOF'
 # >>> nexus command aliases >>>
-# Nexus commands
-alias server='fcc-server'
-alias claudecode='fcc-claude'
+# Optional alternate command names
+alias nexserver='server'
+alias nexusclaude='claudecode'
 # <<< nexus command aliases <<<
 EOF
 

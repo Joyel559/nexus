@@ -51,7 +51,7 @@ def _load_env_template() -> str:
 
 
 def serve() -> None:
-    """Start the FastAPI server (registered as `fcc-server` script)."""
+    """Start the FastAPI server (registered as `server`/`nexserver` script)."""
     try:
         try:
             while True:
@@ -94,7 +94,7 @@ def _run_supervised_server(settings: Settings) -> bool:
 
 
 def init() -> None:
-    """Scaffold config at ~/.config/nexus/.env (registered as `fcc-init`)."""
+    """Scaffold config at ~/.config/nexus/.env (registered as `nexus-init`)."""
     config_dir = Path.home() / ".config" / "nexus"
     env_file = config_dir / ".env"
 
@@ -107,7 +107,7 @@ def init() -> None:
     template = _load_env_template()
     env_file.write_text(template, encoding="utf-8")
     print(f"Config created at {env_file}")
-    print("Edit it to set your API keys and model preferences, then run: fcc-server")
+    print("Edit it to set your API keys and model preferences, then run: server")
 
 
 def _claude_child_env(
@@ -181,7 +181,7 @@ def launch_claude(argv: Sequence[str] | None = None) -> None:
             f"Nexus proxy is not reachable at {proxy_root_url}: {error}",
             file=sys.stderr,
         )
-        print("Start it in another terminal with: fcc-server", file=sys.stderr)
+        print("Start it in another terminal with: server", file=sys.stderr)
         raise SystemExit(1)
 
     args = list(sys.argv[1:] if argv is None else argv)

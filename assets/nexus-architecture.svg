@@ -148,7 +148,7 @@
     <rect x="15" y="15" width="36" height="36" rx="8" fill="#9CA3AF" fill-opacity="0.1"/>
     <!-- Terminal Icon -->
     <path class="ico-client" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M 20,21 L 28,27 L 20,33 M 31,33 H 43"/>
-    <text x="65" y="28" fill="#FFFFFF" class="card-title">fcc-claude CLI Launcher</text>
+    <text x="65" y="28" fill="#FFFFFF" class="card-title">claudecode CLI Launcher</text>
     <text x="65" y="44" class="card-path">cli/entrypoints.py &amp; manager.py</text>
     <text x="20" y="78" class="card-body">• Dynamically sets local ANTHROPIC_BASE_URL</text>
     <text x="20" y="96" class="card-body">• Spawns wrapped Claude process safely</text>

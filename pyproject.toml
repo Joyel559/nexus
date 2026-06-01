@@ -31,12 +31,14 @@ dependencies = [
 ]
 
 [project.scripts]
-fcc-server = "cli.entrypoints:serve"
 nexus = "cli.entrypoints:serve"
-fcc-init = "cli.entrypoints:init"
-fcc-claude = "cli.entrypoints:launch_claude"
-fcc-migrate-credentials = "cli.entrypoints:migrate_credentials"
-fcc-wipe-credentials = "cli.entrypoints:wipe_credentials"
+server = "cli.entrypoints:serve"
+claudecode = "cli.entrypoints:launch_claude"
+nexserver = "cli.entrypoints:serve"
+nexusclaude = "cli.entrypoints:launch_claude"
+nexus-init = "cli.entrypoints:init"
+nexus-migrate-credentials = "cli.entrypoints:migrate_credentials"
+nexus-wipe-credentials = "cli.entrypoints:wipe_credentials"
 
 [project.optional-dependencies]
 voice = [

@@ -52,10 +52,10 @@ Run:
 
 ```bash
 # terminal 1
-uv run fcc-server
+server
 
 # terminal 2
-uv run fcc-claude
+claudecode
 ```
 
 Server URLs:
@@ -183,14 +183,13 @@ Run server from Nexus repo, run Claude in any project directory.
 ```bash
 # terminal 1
 cd /path/to/nexus
-fcc-server
+server
 
 # terminal 2
 cd /path/to/your-project
-fcc-claude
+claudecode
 ```
-
-If Claude opens the wrong folder, check shell wrappers/functions overriding `fcc-claude`.
+If Claude opens the wrong folder, check shell wrappers/functions overriding your shell command mapping.
 
 ## Why Not Just Use Claude Code Directly?
 
@@ -288,10 +287,10 @@ Before public push:
 uv run pytest -q
 
 # run gateway
-uv run fcc-server
+server
 
 # run Claude through gateway
-uv run fcc-claude
+claudecode
 
 # global install from local repo path
 uv tool install --force /absolute/path/to/nexus
