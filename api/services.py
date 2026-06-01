@@ -23,6 +23,7 @@ from core.trace import api_messages_request_snapshot, trace_event, traced_async_
 from providers.base import BaseProvider
 from providers.exceptions import InvalidRequestError, ProviderError
 from providers.registry import ProviderOverrides
+from providers.registry import ProviderRegistry
 
 from .gateway.request_queue import QueueBackpressureError
 from .gateway.runtime import GatewayRuntime
@@ -61,7 +62,7 @@ _OPENAI_CHAT_UPSTREAM_IDS = frozenset(
         "mistral",
         "cohere",
         "github_models",
-        "antigravity",
+        "gemini",
     }
 )
 
@@ -121,12 +122,14 @@ class ClaudeProxyService:
         settings: Settings,
         provider_getter: ProviderGetter,
         gateway_runtime: GatewayRuntime | None = None,
+        provider_registry: ProviderRegistry | None = None,
         model_router: ModelRouter | None = None,
         token_counter: TokenCounter = get_token_count,
     ):
         self._settings = settings
         self._provider_getter = provider_getter
         self._gateway_runtime = gateway_runtime
+        self._provider_registry = provider_registry
         self._model_router = model_router or ModelRouter(settings)
         self._token_counter = token_counter
 
@@ -186,8 +189,17 @@ class ClaudeProxyService:
     def _chunk_is_provider_error_text(chunk: str) -> bool:
         if "event: content_block_delta" not in chunk:
             return False
-        marker = "Provider API request failed."
-        return marker in chunk
+        markers = (
+            "Provider API request failed.",
+            "Provider rate limit reached.",
+            "Provider authentication failed.",
+            "All connection attempts failed",
+            "Request timed out",
+            "Upstream provider ",
+        )
+        if not any(marker in chunk for marker in markers):
+            return False
+        return "request_id=req_" in chunk or "Request ID: req_" in chunk
 
     @staticmethod
     def _block_text(content: Any) -> str:
@@ -284,6 +296,39 @@ class ClaudeProxyService:
             return False
         return any(fragment in message for fragment in retryable_fragments)
 
+    @classmethod
+    def _should_try_next_provider(
+        cls,
+        exc: Exception,
+        *,
+        has_next_candidate: bool,
+    ) -> bool:
+        """Fallback policy for provider-chain traversal.
+
+        We continue to the next provider for transient errors and also for
+        provider-local auth/config errors (invalid/missing key), because those
+        are often account-specific and another provider in the chain may still
+        succeed immediately.
+        """
+        if not has_next_candidate:
+            return False
+        if cls._is_retryable_exception(exc):
+            return True
+        status_code = exc.status_code if isinstance(exc, ProviderError) else None
+        if status_code in {400, 401, 403}:
+            return True
+        message = str(exc).lower()
+        auth_like = (
+            "invalid api key",
+            "api key is not set",
+            "missing key",
+            "unauthorized",
+            "forbidden",
+            "authentication",
+            "permission denied",
+        )
+        return any(fragment in message for fragment in auth_like)
+
     @asynccontextmanager
     async def _admission_context(self, request_id: str):
         gateway = self._gateway_runtime
@@ -312,7 +357,10 @@ class ClaudeProxyService:
         self,
         *,
         routed_request: MessagesRequest,
-        selections: tuple[tuple[str, int | None, ProviderOverrides | None], ...],
+        selections: tuple[
+            tuple[str, int | None, ProviderOverrides | None]
+            | tuple[str, int | None, ProviderOverrides | None, str]
+        ],
         input_tokens: int,
         request_id: str,
         thinking_enabled: bool,
@@ -321,9 +369,15 @@ class ClaudeProxyService:
         last_error_chunk: str | None = None
         attempted_targets: set[tuple[str, int | None]] = set()
         async with self._admission_context(request_id):
-            for attempt_index, (provider_id, account_id, overrides) in enumerate(
-                selections
-            ):
+            for attempt_index, selection in enumerate(selections):
+                provider_id = selection[0]
+                account_id = selection[1]
+                overrides = selection[2]
+                provider_model = (
+                    selection[3]
+                    if len(selection) > 3 and isinstance(selection[3], str)
+                    else routed_request.model
+                )
                 target_key = (provider_id, account_id)
                 if target_key in attempted_targets:
                     continue
@@ -347,19 +401,21 @@ class ClaudeProxyService:
 
                 started_at = monotonic()
                 provider = self._get_provider(provider_id, overrides)
+                attempt_request = routed_request.model_copy(deep=True)
+                attempt_request.model = provider_model
 
                 try:
                     provider.preflight_stream(
-                        routed_request,
+                        attempt_request,
                         thinking_enabled=thinking_enabled,
                     )
                 except Exception as exc:
                     if gateway is not None:
                         gateway.record_failure(
                             request_id=request_id,
-                            gateway_model=routed_request.model,
+                            gateway_model=attempt_request.model,
                             provider_id=provider_id,
-                            provider_model=routed_request.model,
+                            provider_model=attempt_request.model,
                             account_id=account_id,
                             latency_ms=(monotonic() - started_at) * 1000.0,
                             input_tokens=input_tokens,
@@ -380,9 +436,9 @@ class ClaudeProxyService:
                             account_id=account_id,
                             detail={"error_type": type(exc).__name__},
                         )
-                    if (
-                        self._is_retryable_exception(exc)
-                        and attempt_index + 1 < len(selections)
+                    if self._should_try_next_provider(
+                        exc,
+                        has_next_candidate=attempt_index + 1 < len(selections),
                     ):
                         continue
                     raise
@@ -395,7 +451,7 @@ class ClaudeProxyService:
                 try:
                     async for chunk, observed_state in track_message_stop(
                         provider.stream_response(
-                            routed_request,
+                            attempt_request,
                             input_tokens=input_tokens,
                             request_id=request_id,
                             thinking_enabled=thinking_enabled,
@@ -426,9 +482,9 @@ class ClaudeProxyService:
                         if gateway is not None:
                             gateway.record_failure(
                                 request_id=request_id,
-                                gateway_model=routed_request.model,
+                                gateway_model=attempt_request.model,
                                 provider_id=provider_id,
-                                provider_model=routed_request.model,
+                                provider_model=attempt_request.model,
                                 account_id=account_id,
                                 latency_ms=(monotonic() - started_at) * 1000.0,
                                 input_tokens=input_tokens,
@@ -452,9 +508,9 @@ class ClaudeProxyService:
                         )
                         gateway.record_failure(
                             request_id=request_id,
-                            gateway_model=routed_request.model,
+                            gateway_model=attempt_request.model,
                             provider_id=provider_id,
-                            provider_model=routed_request.model,
+                            provider_model=attempt_request.model,
                             account_id=account_id,
                             latency_ms=(monotonic() - started_at) * 1000.0,
                             input_tokens=input_tokens,
@@ -475,9 +531,9 @@ class ClaudeProxyService:
                             account_id=account_id,
                             detail={"reason": "precommit_exception"},
                         )
-                    if (
-                        self._is_retryable_exception(exc)
-                        and attempt_index + 1 < len(selections)
+                    if self._should_try_next_provider(
+                        exc,
+                        has_next_candidate=attempt_index + 1 < len(selections),
                     ):
                         continue
                     raise
@@ -491,9 +547,9 @@ class ClaudeProxyService:
                         )
                         gateway.record_failure(
                             request_id=request_id,
-                            gateway_model=routed_request.model,
+                            gateway_model=attempt_request.model,
                             provider_id=provider_id,
-                            provider_model=routed_request.model,
+                            provider_model=attempt_request.model,
                             account_id=account_id,
                             latency_ms=(monotonic() - started_at) * 1000.0,
                             input_tokens=input_tokens,
@@ -529,9 +585,9 @@ class ClaudeProxyService:
                 if gateway is not None:
                     gateway.record_success(
                         request_id=request_id,
-                        gateway_model=routed_request.model,
+                        gateway_model=attempt_request.model,
                         provider_id=provider_id,
-                        provider_model=routed_request.model,
+                        provider_model=attempt_request.model,
                         account_id=account_id,
                         latency_ms=(monotonic() - started_at) * 1000.0,
                         input_tokens=input_tokens,
@@ -597,6 +653,7 @@ class ClaudeProxyService:
 
             routing_selections: list[
                 tuple[str, int | None, ProviderOverrides | None]
+                | tuple[str, int | None, ProviderOverrides | None, str]
             ] = []
             gateway = self._gateway_runtime
             route_request_id: str | None = None
@@ -623,6 +680,12 @@ class ClaudeProxyService:
                     account_id = (
                         selection.account.account_id if selection.account else None
                     )
+                    provider_model = self._choose_provider_model(
+                        provider_id=selection.provider_id,
+                        requested_model=request_data.model,
+                        fallback_provider_model=routed.resolved.provider_model,
+                        strategy=decision.route_rule.strategy.value,
+                    )
                     routing_selections.append(
                         (
                             selection.provider_id,
@@ -632,6 +695,7 @@ class ClaudeProxyService:
                                 if account_id is not None
                                 else None
                             ),
+                            provider_model,
                         )
                     )
                 route_request_id = decision.request_id
@@ -647,22 +711,10 @@ class ClaudeProxyService:
             if not routing_selections:
                 routing_selections.append((routed.resolved.provider_id, None, None))
 
-            # Preserve historical behavior: surface immediate provider errors during
-            # stream iterator creation before returning a StreamingResponse.
-            first_provider_id, _first_account_id, first_overrides = routing_selections[
-                0
-            ]
-            first_provider = self._get_provider(first_provider_id, first_overrides)
-            first_provider.preflight_stream(
-                routed.request,
-                thinking_enabled=routed.resolved.thinking_enabled,
-            )
-            _ = first_provider.stream_response(
-                routed.request,
-                input_tokens=0,
-                request_id=None,
-                thinking_enabled=routed.resolved.thinking_enabled,
-            )
+            # Do not fail fast on the first provider. Let _stream_with_fallbacks
+            # execute preflight/stream attempts per-candidate so auth/quota/missing-key
+            # issues can immediately fall through to the next provider.
+            first_provider_id = routing_selections[0][0]
 
             trace_event(
                 stage="routing",
@@ -841,3 +893,101 @@ class ClaudeProxyService:
                     status_code=_http_status_for_unexpected_service_exception(e),
                     detail=get_user_facing_error_message(e),
                 ) from e
+
+    def _choose_provider_model(
+        self,
+        *,
+        provider_id: str,
+        requested_model: str,
+        fallback_provider_model: str,
+        strategy: str,
+    ) -> str:
+        requested_model_lower = requested_model.lower()
+        direct_provider, sep, direct_model = requested_model.partition("/")
+        if sep and direct_provider == provider_id and direct_model:
+            return direct_model
+
+        preferred: list[str] = []
+        if "opus" in requested_model_lower and self._settings.model_opus:
+            pref_provider, _, pref_model = self._settings.model_opus.partition("/")
+            if pref_provider == provider_id and pref_model:
+                preferred.append(pref_model)
+        if "sonnet" in requested_model_lower and self._settings.model_sonnet:
+            pref_provider, _, pref_model = self._settings.model_sonnet.partition("/")
+            if pref_provider == provider_id and pref_model:
+                preferred.append(pref_model)
+        if "haiku" in requested_model_lower and self._settings.model_haiku:
+            pref_provider, _, pref_model = self._settings.model_haiku.partition("/")
+            if pref_provider == provider_id and pref_model:
+                preferred.append(pref_model)
+        if self._settings.model:
+            pref_provider, _, pref_model = self._settings.model.partition("/")
+            if pref_provider == provider_id and pref_model:
+                preferred.append(pref_model)
+
+        discovered: list[str] = []
+        if self._provider_registry is not None:
+            for info in self._provider_registry.cached_prefixed_model_infos():
+                pid, sep, model_id = info.model_id.partition("/")
+                if pid == provider_id and sep and model_id:
+                    discovered.append(model_id)
+
+        for candidate in preferred:
+            if candidate in discovered or not discovered:
+                return candidate
+
+        if not discovered:
+            return self._default_model_for_provider(provider_id, fallback_provider_model)
+
+        return self._rank_provider_models(
+            discovered_models=discovered,
+            requested_model=requested_model_lower,
+            strategy=strategy,
+        )[0]
+
+    def _rank_provider_models(
+        self,
+        *,
+        discovered_models: list[str],
+        requested_model: str,
+        strategy: str,
+    ) -> list[str]:
+        quality_tokens = ("opus", "sonnet", "pro", "ultra", "o3", "o4", "gpt-4", "r1")
+        cheap_tokens = ("flash", "mini", "nano", "small", "haiku", "8b")
+        fast_tokens = ("flash", "turbo", "instant", "mini", "haiku")
+
+        def _score(model_id: str) -> tuple[float, str]:
+            lowered = model_id.lower()
+            quality = sum(1 for token in quality_tokens if token in lowered)
+            cheap = sum(1 for token in cheap_tokens if token in lowered)
+            fast = sum(1 for token in fast_tokens if token in lowered)
+            match_bonus = 1.0 if any(token in lowered for token in requested_model.split("-")) else 0.0
+
+            if strategy == "cost_optimized":
+                base = (cheap * 2.0) + fast + match_bonus - (quality * 0.2)
+            elif strategy == "quality_first":
+                base = (quality * 2.0) + match_bonus - (cheap * 0.3)
+            elif strategy in {"performance_first", "adaptive_latency", "smart_health", "auto"}:
+                base = (fast * 1.8) + quality + match_bonus
+            else:
+                base = quality + fast + cheap + match_bonus
+            return (-base, model_id)
+
+        ranked = sorted(discovered_models, key=_score)
+        return ranked
+
+    @staticmethod
+    def _default_model_for_provider(provider_id: str, fallback: str) -> str:
+        defaults = {
+            "gemini": "gemini-2.0-flash",
+            "mistral": "mistral-small-latest",
+            "open_router": "deepseek/deepseek-chat-v3-0324:free",
+            "openai": "gpt-4.1-mini",
+            "anthropic": "claude-sonnet-4-20250514",
+            "groq": "llama-3.3-70b-versatile",
+            "cerebras": "llama3.1-70b",
+            "cohere": "command-r-plus",
+            "deepseek": "deepseek-chat",
+            "kimi": "moonshot-v1-8k",
+        }
+        return defaults.get(provider_id, fallback)

@@ -163,6 +163,39 @@ class ProviderPoolManager:
             "DELETE FROM provider_accounts WHERE account_id = ?", (account_id,)
         )
 
+    def wipe_all_accounts(self) -> dict[str, int]:
+        """Delete all stored provider credentials and reset provider runtime state."""
+        counts_before = self._db.fetchone(
+            """
+            SELECT
+                (SELECT COUNT(*) FROM provider_accounts) AS accounts,
+                (SELECT COUNT(*) FROM provider_account_credential_versions) AS versions,
+                (SELECT COUNT(*) FROM cooldowns WHERE active = 1) AS active_cooldowns
+            """
+        )
+        accounts = int(counts_before["accounts"]) if counts_before else 0
+        versions = int(counts_before["versions"]) if counts_before else 0
+        active_cooldowns = (
+            int(counts_before["active_cooldowns"]) if counts_before else 0
+        )
+        now = time.time()
+        self._db.execute("DELETE FROM provider_account_credential_versions")
+        # Keep request history but detach it from credential records.
+        self._db.execute("UPDATE request_logs SET account_id = NULL WHERE account_id IS NOT NULL")
+        self._db.execute("DELETE FROM provider_accounts")
+        self._db.execute(
+            "UPDATE providers SET updated_at = ?",
+            (now,),
+        )
+        self._db.execute("UPDATE cooldowns SET active = 0 WHERE active = 1")
+        with self._lock:
+            self._rr_index_by_provider.clear()
+        return {
+            "deleted_accounts": accounts,
+            "deleted_credential_versions": versions,
+            "deactivated_cooldowns": active_cooldowns,
+        }
+
     def credential_for_account(self, account_id: int) -> str | None:
         row = self._db.fetchone(
             "SELECT credential FROM provider_accounts WHERE account_id = ?",
@@ -379,7 +412,12 @@ class ProviderPoolManager:
         cooldown_until: float | None = None
         if is_rate_limit:
             level += 1
-            cooldown_until = now + min(1800.0, 15.0 * (2 ** (level - 1)))
+            cooldown_seconds = self._next_rate_limit_cooldown_seconds(
+                account_id=account_id,
+                provider_id=str(row["provider_id"]),
+                now=now,
+            )
+            cooldown_until = now + cooldown_seconds
             self._db.execute(
                 """
                 INSERT INTO cooldowns(provider_id, account_id, reason, started_at, until_ts, backoff_level, active)
@@ -408,6 +446,37 @@ class ProviderPoolManager:
             """,
             (level, cooldown_until, health, error_type, now, now, account_id),
         )
+
+    def _next_rate_limit_cooldown_seconds(
+        self,
+        *,
+        account_id: int,
+        provider_id: str,
+        now: float,
+    ) -> float:
+        """Escalate 429 cooldown durations over a rolling 24h window."""
+        windows = (120.0, 600.0, 3600.0, 86400.0)
+        rows = self._db.fetchall(
+            """
+            SELECT started_at
+            FROM cooldowns
+            WHERE account_id = ?
+              AND provider_id = ?
+              AND started_at >= ?
+              AND (
+                  lower(reason) LIKE '%429%'
+                  OR lower(reason) LIKE '%ratelimit%'
+                  OR lower(reason) LIKE '%rate limit%'
+                  OR lower(reason) LIKE '%quota%'
+              )
+            ORDER BY started_at ASC
+            """,
+            (account_id, provider_id, now - 86400.0),
+        )
+        # Include the current 429 event.
+        hit_count = len(rows) + 1
+        index = min(hit_count - 1, len(windows) - 1)
+        return windows[index]
 
     def _is_account_eligible(self, account: ProviderAccount, now_ts: float) -> bool:
         if not account.enabled:

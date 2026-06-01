@@ -15,7 +15,11 @@ class AccountType(StrEnum):
 class RoutingStrategy(StrEnum):
     ROUND_ROBIN = "round_robin"
     STICKY = "sticky"
+    SMART_HEALTH = "smart_health"
     PERFORMANCE_FIRST = "performance_first"
+    COST_OPTIMIZED = "cost_optimized"
+    QUALITY_FIRST = "quality_first"
+    AUTO = "auto"
     QUOTA_AWARE = "quota_aware"
     ADAPTIVE_LATENCY = "adaptive_latency"
     WEIGHTED = "weighted"
@@ -62,6 +66,7 @@ class RouteSelection:
     account: ProviderAccount | None
     strategy: RoutingStrategy
     fallback_index: int
+    provider_model: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

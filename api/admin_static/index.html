@@ -7,7 +7,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="/admin/assets/admin.css?v=20260530-agents-role-ui2" />
+    <link rel="stylesheet" href="/admin/assets/admin.css?v=20260531-gemini-agents-v2" />
   </head>
   <body>
     <div class="app-shell">
@@ -45,6 +45,9 @@
           <div class="strip-header">
             <h3>Gateway Pools & Metrics</h3>
             <button id="refreshGateway" class="ghost-button" type="button">Refresh</button>
+          </div>
+          <div style="display:flex; justify-content:flex-end; margin-bottom:10px;">
+            <button id="openAgentsPageBtn" class="secondary-button" type="button">Open Agents Page</button>
           </div>
           <div class="gateway-layout">
             <div class="dashboard-top-row">
@@ -136,62 +139,29 @@
               <h4>OAuth Sessions</h4>
               <div id="gatewayOAuthSessions"></div>
             </article>
-            <article class="gateway-card gateway-card-wide">
-              <h4>OAuth Ecosystems</h4>
-              <div id="gatewayOAuthEcosystems" class="ecosystem-grid">
-                <article class="ecosystem-card ecosystem-google">
-                  <div class="ecosystem-head">
-                    <h5>Google Ecosystem</h5>
-                    <button
-                      id="oauthGoogleLoginBtn"
-                      class="secondary-button"
-                      type="button"
-                      onclick="window.location.assign('/admin/oauth/google/start?account_key=google-ui')"
-                    >
-                      Connect Google / Antigravity
-                    </button>
-                  </div>
-                  <div id="oauthGoogleSummary" class="ecosystem-summary"></div>
-                </article>
-                <article class="ecosystem-card ecosystem-github">
-                  <div class="ecosystem-head">
-                    <h5>GitHub Ecosystem</h5>
-                    <button
-                      id="oauthGithubLoginBtn"
-                      class="secondary-button"
-                      type="button"
-                      onclick="window.location.assign('/admin/oauth/github/start?account_key=github-ui')"
-                    >
-                      Connect GitHub
-                    </button>
-                  </div>
-                  <div id="oauthGithubSummary" class="ecosystem-summary"></div>
-                </article>
-              </div>
-            </article>
-            <article class="gateway-card gateway-card-wide">
-              <h4>Agents</h4>
-              <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
-                <button id="agentsRescanBtn" class="secondary-button" type="button">Rescan Agents</button>
-                <button id="agentsImportAllBtn" class="secondary-button" type="button">Import All Skills</button>
-                <button id="agentsSyncEnabledBtn" class="secondary-button" type="button">Sync Enabled Agents</button>
-                <input id="agentsSearch" placeholder="Search agents..." style="min-width:220px;" />
-              </div>
-              <div id="gatewayAgents"></div>
-            </article>
           </div>
           <form id="addApiAccountForm" class="gateway-form">
-            <h4>Add API Key Account</h4>
-            <input id="gaProvider" placeholder="provider_id (e.g. groq)" required />
-            <input id="gaKey" placeholder="account key (e.g. acct-1)" required />
-            <input id="gaBackend" placeholder="auth backend key (optional)" />
-            <input id="gaLabel" placeholder="label" />
-            <input id="gaSecret" placeholder="api key" required />
-            <input id="gaReqQuota" placeholder="max requests/day (optional)" />
-            <input id="gaTokQuota" placeholder="max tokens/day (optional)" />
-            <button class="secondary-button" type="submit">Add Account</button>
+            <h4>Add API Key</h4>
+            <input id="gaProvider" type="hidden" required />
+            <div class="field-description" id="gaProviderHint">Click a provider card above to select provider.</div>
+            <input id="gaSecret" placeholder="Paste API key" required />
+            <button class="secondary-button" type="submit">Save API Key</button>
           </form>
-          <form id="importAgentForm" class="gateway-form">
+        </section>
+
+        <section id="agentsPage" class="provider-strip" aria-label="Agents page" style="display:none;">
+          <div class="strip-header">
+            <h3>Agents</h3>
+            <button id="backToDashboardBtn" class="ghost-button" type="button">← Back To Dashboard</button>
+          </div>
+          <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+            <button id="agentsRescanBtn" class="secondary-button" type="button">Rescan Agents</button>
+            <button id="agentsImportAllBtn" class="secondary-button" type="button">Import All Skills</button>
+            <button id="agentsSyncEnabledBtn" class="secondary-button" type="button">Sync Enabled Agents</button>
+            <input id="agentsSearch" placeholder="Search agents..." style="min-width:220px;" />
+          </div>
+          <div id="gatewayAgents"></div>
+          <form id="importAgentForm" class="gateway-form" style="margin-top: 12px;">
             <h4>Import Custom Agent</h4>
             <input id="agentImportTitle" placeholder="title" required />
             <input id="agentImportCategory" placeholder="category (e.g. custom)" required />
@@ -225,6 +195,6 @@
         </div>
       </footer>
     </div>
-    <script src="/admin/assets/admin.js?v=20260530-agents-role-ui2"></script>
+    <script src="/admin/assets/admin.js?v=20260531-gemini-agents-v2"></script>
   </body>
 </html>

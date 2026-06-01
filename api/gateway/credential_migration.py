@@ -47,7 +47,21 @@ class CredentialMigrator:
                 (provider_id, source_key),
             )
             if already is not None:
-                continue
+                account_id = int(already["account_id"])
+                existing_account = self._db.fetchone(
+                    """
+                    SELECT account_id
+                    FROM provider_accounts
+                    WHERE account_id = ? AND provider_id = ?
+                    """,
+                    (account_id, provider_id),
+                )
+                if existing_account is not None:
+                    continue
+                self._db.execute(
+                    "DELETE FROM credential_migrations WHERE migration_id = ?",
+                    (int(already["migration_id"]),),
+                )
             account_id = self._pool.add_or_update_account(
                 provider_id=provider_id,
                 account_key="legacy-env-default",

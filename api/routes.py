@@ -86,6 +86,7 @@ def get_proxy_service(
             )
         ),
         gateway_runtime=getattr(request.app.state, "gateway_runtime", None),
+        provider_registry=getattr(request.app.state, "provider_registry", None),
         token_counter=get_token_count,
     )
 
@@ -273,6 +274,77 @@ async def _anthropic_stream_to_openai_response(
     )
 
 
+async def _anthropic_stream_to_message_response(stream_response: object) -> dict[str, object]:
+    """Collapse Anthropic SSE stream into one Anthropic message response."""
+    if not isinstance(stream_response, Response):
+        raise HTTPException(status_code=500, detail="Unexpected stream response shape")
+    body_iterator = getattr(stream_response, "body_iterator", None)
+    if body_iterator is None:
+        raise HTTPException(status_code=500, detail="Unexpected stream iterator")
+
+    message: dict[str, object] | None = None
+    text_parts: list[str] = []
+    stop_reason: str | None = None
+    stop_sequence: str | None = None
+    input_tokens = 0
+    output_tokens = 0
+
+    async for chunk in body_iterator:
+        text = chunk.decode("utf-8") if isinstance(chunk, bytes) else str(chunk)
+        for line in text.splitlines():
+            if not line.startswith("data:"):
+                continue
+            payload = line[5:].strip()
+            if not payload or payload == "[DONE]":
+                continue
+            try:
+                parsed = json.loads(payload)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(parsed, dict):
+                continue
+
+            event_type = parsed.get("type")
+            if event_type == "message_start":
+                candidate = parsed.get("message")
+                if isinstance(candidate, dict):
+                    message = dict(candidate)
+                    # We'll rebuild content from deltas to ensure full text is present.
+                    message["content"] = []
+
+            delta = parsed.get("delta")
+            if isinstance(delta, dict) and delta.get("type") == "text_delta":
+                text_value = delta.get("text")
+                if isinstance(text_value, str):
+                    text_parts.append(text_value)
+
+            if event_type == "message_delta" and isinstance(delta, dict):
+                stop_reason_value = delta.get("stop_reason")
+                if isinstance(stop_reason_value, str) or stop_reason_value is None:
+                    stop_reason = stop_reason_value
+                stop_sequence_value = delta.get("stop_sequence")
+                if isinstance(stop_sequence_value, str) or stop_sequence_value is None:
+                    stop_sequence = stop_sequence_value
+
+            usage = parsed.get("usage")
+            if isinstance(usage, dict):
+                inp = usage.get("input_tokens")
+                out = usage.get("output_tokens")
+                if isinstance(inp, int):
+                    input_tokens = max(input_tokens, inp)
+                if isinstance(out, int):
+                    output_tokens = max(output_tokens, out)
+
+    if message is None:
+        raise HTTPException(status_code=502, detail="Empty upstream response")
+
+    message["content"] = [{"type": "text", "text": "".join(text_parts)}]
+    message["stop_reason"] = stop_reason
+    message["stop_sequence"] = stop_sequence
+    message["usage"] = {"input_tokens": input_tokens, "output_tokens": output_tokens}
+    return message
+
+
 # =============================================================================
 # Routes
 # =============================================================================
@@ -282,8 +354,11 @@ async def create_message(
     service: ClaudeProxyService = Depends(get_proxy_service),
     _auth=Depends(require_api_key),
 ):
-    """Create a message (always streaming)."""
-    return service.create_message(request_data)
+    """Create a message response (SSE when stream=true, JSON when stream=false)."""
+    response = service.create_message(request_data)
+    if request_data.stream:
+        return response
+    return await _anthropic_stream_to_message_response(response)
 
 
 @router.api_route("/v1/messages", methods=["HEAD", "OPTIONS"])

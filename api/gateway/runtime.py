@@ -88,6 +88,7 @@ class GatewayRuntime:
             postgres_dsn=postgres_dsn,
         )
         db = GatewayDatabase(storage)
+        cls._migrate_legacy_provider_ids(db)
         cipher = CredentialCipher(getattr(settings, "gateway_encryption_key", ""))
         pool = ProviderPoolManager(db, cipher=cipher)
         metrics = GatewayMetrics(db)
@@ -192,6 +193,65 @@ class GatewayRuntime:
             )
         return runtime
 
+    @staticmethod
+    def _migrate_legacy_provider_ids(db: GatewayDatabase) -> None:
+        """Migrate deprecated provider ids to current equivalents."""
+        legacy = "antigravity"
+        current = "gemini"
+        row = db.fetchone(
+            "SELECT COUNT(1) AS c FROM provider_accounts WHERE provider_id = ?",
+            (legacy,),
+        )
+        count = int(row["c"]) if row else 0
+        if count <= 0:
+            return
+        now = time.time()
+        db.execute(
+            """
+            INSERT OR IGNORE INTO providers(provider_id, enabled, priority, created_at, updated_at)
+            VALUES(?, 1, 0, ?, ?)
+            """,
+            (current, now, now),
+        )
+        db.execute(
+            "UPDATE provider_accounts SET provider_id = ? WHERE provider_id = ?",
+            (current, legacy),
+        )
+        db.execute(
+            "UPDATE auth_backends SET provider_id = ? WHERE provider_id = ?",
+            (current, legacy),
+        )
+        db.execute(
+            "UPDATE oauth_accounts SET provider_id = ? WHERE provider_id = ?",
+            (current, legacy),
+        )
+        db.execute(
+            "UPDATE routing_rule_providers SET provider_id = ? WHERE provider_id = ?",
+            (current, legacy),
+        )
+        db.execute(
+            "UPDATE request_logs SET provider_id = ? WHERE provider_id = ?",
+            (current, legacy),
+        )
+        db.execute(
+            "UPDATE routing_events SET from_provider = ? WHERE from_provider = ?",
+            (current, legacy),
+        )
+        db.execute(
+            "UPDATE routing_events SET to_provider = ? WHERE to_provider = ?",
+            (current, legacy),
+        )
+        db.execute(
+            "DELETE FROM providers WHERE provider_id = ?",
+            (legacy,),
+        )
+        logger.info(
+            "Migrated legacy provider ids: {} -> {} accounts={}",
+            legacy,
+            current,
+            count,
+        )
+
     def close(self) -> None:
         self.db.close()
 
@@ -255,8 +315,26 @@ class GatewayRuntime:
         self.scheduler.register(
             ScheduledTask(
                 name="gateway.oauth_quota_refresh",
-                interval_seconds=90.0,
+                interval_seconds=300.0,
                 fn=self._task_oauth_quota_refresh,
+            )
+        )
+        self.scheduler.register(
+            ScheduledTask(
+                name="gateway.model_discovery_refresh",
+                interval_seconds=21600.0,
+                fn=lambda: self._task_model_discovery_refresh(
+                    provider_registry, only_missing=True
+                ),
+            )
+        )
+        self.scheduler.register(
+            ScheduledTask(
+                name="gateway.model_catalog_refresh",
+                interval_seconds=86400.0,
+                fn=lambda: self._task_model_discovery_refresh(
+                    provider_registry, only_missing=False
+                ),
             )
         )
         self.scheduler.start()
@@ -327,7 +405,7 @@ class GatewayRuntime:
         oauth = OAuthRuntime(settings=self.settings, repo=self.auth_repo)
         refreshed = 0
         for account in refreshable:
-            if str(account["provider_id"]) != "antigravity":
+            if str(account["provider_id"]) != "gemini":
                 continue
             expires_at = account.get("token_expires_at")
             if isinstance(expires_at, (int, float)) and float(expires_at) > now + 300:
@@ -367,7 +445,7 @@ class GatewayRuntime:
         oauth = OAuthRuntime(settings=self.settings, repo=self.auth_repo)
         updates = 0
         for account in refreshable:
-            if str(account["provider_id"]) != "antigravity":
+            if str(account["provider_id"]) != "gemini":
                 continue
             provider_account_id = account.get("provider_account_id")
             if not isinstance(provider_account_id, int):
@@ -394,6 +472,26 @@ class GatewayRuntime:
             updates += 1
         if updates:
             await self.event_bus.publish("oauth.quota_refreshed", {"count": updates})
+
+    async def _task_model_discovery_refresh(
+        self, provider_registry: ProviderRegistry, *, only_missing: bool
+    ) -> None:
+        try:
+            await provider_registry.refresh_model_list_cache(
+                self.settings, only_missing=only_missing
+            )
+            await self.event_bus.publish(
+                "models.catalog_refreshed",
+                {"only_missing": only_missing},
+            )
+        except Exception as exc:
+            await self.event_bus.publish(
+                "models.catalog_refresh_failed",
+                {
+                    "only_missing": only_missing,
+                    "error_type": type(exc).__name__,
+                },
+            )
 
     def _update_provider_account_credential(self, *, account_id: int, credential: str) -> None:
         row = self.db.fetchone(
@@ -793,6 +891,30 @@ class GatewayRuntime:
             metadata=merged_metadata,
         )
         return provider_account_id
+
+    def wipe_all_credentials(self) -> dict[str, int]:
+        """Remove all stored API-key/OAuth credentials and related auth artifacts."""
+        rows = self.db.fetchone(
+            """
+            SELECT
+                (SELECT COUNT(*) FROM oauth_accounts) AS oauth_accounts,
+                (SELECT COUNT(*) FROM refresh_tokens) AS refresh_tokens,
+                (SELECT COUNT(*) FROM oauth_sessions) AS oauth_sessions
+            """
+        )
+        oauth_accounts = int(rows["oauth_accounts"]) if rows else 0
+        refresh_tokens = int(rows["refresh_tokens"]) if rows else 0
+        oauth_sessions = int(rows["oauth_sessions"]) if rows else 0
+        self.db.execute("DELETE FROM refresh_tokens")
+        self.db.execute("DELETE FROM oauth_accounts")
+        self.db.execute("DELETE FROM oauth_sessions")
+        summary = self.pool.wipe_all_accounts()
+        return {
+            **summary,
+            "deleted_oauth_accounts": oauth_accounts,
+            "deleted_refresh_tokens": refresh_tokens,
+            "deleted_oauth_sessions": oauth_sessions,
+        }
 
     def sweep_expired_cooldowns(self) -> None:
         now = time.time()

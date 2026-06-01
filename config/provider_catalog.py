@@ -31,7 +31,9 @@ CEREBRAS_DEFAULT_BASE = "https://api.cerebras.ai/v1"
 MISTRAL_DEFAULT_BASE = "https://api.mistral.ai/v1"
 COHERE_DEFAULT_BASE = "https://api.cohere.com/compatibility/v1"
 GITHUB_MODELS_DEFAULT_BASE = "https://models.inference.ai.azure.com"
-ANTIGRAVITY_DEFAULT_BASE = "http://127.0.0.1:4141/v1"
+GEMINI_DEFAULT_BASE = "https://generativelanguage.googleapis.com/v1beta/openai/"
+# Backward-compatible alias for legacy antigravity provider modules.
+ANTIGRAVITY_DEFAULT_BASE = GEMINI_DEFAULT_BASE
 
 
 @dataclass(frozen=True, slots=True)
@@ -213,15 +215,15 @@ PROVIDER_CATALOG: dict[str, ProviderDescriptor] = {
         proxy_attr="github_models_proxy",
         capabilities=("chat", "streaming", "tools", "rate_limit"),
     ),
-    "antigravity": ProviderDescriptor(
-        provider_id="antigravity",
+    "gemini": ProviderDescriptor(
+        provider_id="gemini",
         transport_type="openai_chat",
-        credential_env="ANTIGRAVITY_API_KEY",
-        credential_attr="antigravity_api_key",
-        default_base_url=ANTIGRAVITY_DEFAULT_BASE,
-        base_url_attr="antigravity_base_url",
-        proxy_attr="antigravity_proxy",
-        capabilities=("chat", "streaming", "tools", "oauth", "rate_limit"),
+        credential_env="GEMINI_API_KEY",
+        credential_attr="gemini_api_key",
+        default_base_url=GEMINI_DEFAULT_BASE,
+        base_url_attr="gemini_base_url",
+        proxy_attr="gemini_proxy",
+        capabilities=("chat", "streaming", "tools", "thinking", "rate_limit"),
     ),
 }
 

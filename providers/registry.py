@@ -139,10 +139,10 @@ def _create_github_models(config: ProviderConfig, _settings: Settings) -> BasePr
     return GitHubModelsProvider(config)
 
 
-def _create_antigravity(config: ProviderConfig, _settings: Settings) -> BaseProvider:
-    from providers.antigravity import AntigravityProvider
+def _create_gemini(config: ProviderConfig, _settings: Settings) -> BaseProvider:
+    from providers.gemini import GeminiProvider
 
-    return AntigravityProvider(config)
+    return GeminiProvider(config)
 
 
 PROVIDER_FACTORIES: dict[str, ProviderFactory] = {
@@ -162,7 +162,7 @@ PROVIDER_FACTORIES: dict[str, ProviderFactory] = {
     "mistral": _create_mistral,
     "cohere": _create_cohere,
     "github_models": _create_github_models,
-    "antigravity": _create_antigravity,
+    "gemini": _create_gemini,
 }
 
 if set(PROVIDER_DESCRIPTORS) != set(SUPPORTED_PROVIDER_IDS) or set(

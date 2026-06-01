@@ -66,7 +66,9 @@ class GatewayMetrics:
                 day,
                 metrics.provider_id,
                 metrics.account_id,
-                metrics.output_tokens,
+                # Track total token usage per request in usage rollups.
+                # (input + output) is what operators expect on the dashboard.
+                max(0, metrics.input_tokens) + max(0, metrics.output_tokens),
                 0 if metrics.success else 1,
                 metrics.retries,
                 metrics.fallback_count,

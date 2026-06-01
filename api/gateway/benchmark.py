@@ -46,6 +46,12 @@ class ProviderBenchmark:
             )
         except Exception:
             pass
+        try:
+            self._db.execute(
+                "ALTER TABLE provider_benchmarks ADD COLUMN error_type TEXT"
+            )
+        except Exception:
+            pass
 
     async def run_once(self, settings: Settings, registry: ProviderRegistry) -> None:
         from config.provider_ids import SUPPORTED_PROVIDER_IDS

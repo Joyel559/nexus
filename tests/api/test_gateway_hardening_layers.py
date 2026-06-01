@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from pathlib import Path
+from time import time
 
 import pytest
 from fastapi import FastAPI
@@ -122,6 +123,101 @@ def test_gateway_migrates_legacy_env_credentials(tmp_path: Path) -> None:
         runtime.close()
 
 
+def test_gateway_rehydrates_legacy_env_credentials_when_account_deleted(
+    tmp_path: Path,
+) -> None:
+    settings = _settings_for_gateway(tmp_path)
+    settings.open_router_api_key = "legacy-router-key"
+    runtime = GatewayRuntime.from_settings(settings)
+    try:
+        row = runtime.db.fetchone(
+            "SELECT account_id FROM provider_accounts WHERE provider_id = ?",
+            ("open_router",),
+        )
+        assert row is not None
+        runtime.db.execute(
+            "DELETE FROM provider_accounts WHERE account_id = ?",
+            (int(row["account_id"]),),
+        )
+        runtime.close()
+
+        runtime = GatewayRuntime.from_settings(settings)
+        rehydrated = runtime.db.fetchone(
+            "SELECT account_id FROM provider_accounts WHERE provider_id = ?",
+            ("open_router",),
+        )
+        assert rehydrated is not None
+    finally:
+        runtime.close()
+
+
+def test_gateway_wipes_all_credentials(tmp_path: Path) -> None:
+    runtime = GatewayRuntime.from_settings(_settings_for_gateway(tmp_path))
+    try:
+        runtime.add_api_key_account(
+            provider_id="open_router",
+            label="api",
+            account_key="api-1",
+            api_key="k-api",
+            auth_backend_key=None,
+            max_requests_per_day=None,
+            max_tokens_per_day=None,
+            enabled=True,
+        )
+        runtime.add_oauth_account(
+            provider_id="antigravity",
+            account_key="oauth-1",
+            label="oauth",
+            access_token="acc-token",
+            auth_backend_key="google_oauth",
+            metadata={},
+            enabled=True,
+            external_account_id="oauth-1",
+            refresh_token="refresh-1",
+            token_expires_at=9999999999.0,
+        )
+        summary = runtime.wipe_all_credentials()
+        assert summary["deleted_accounts"] >= 2
+        assert summary["deleted_credential_versions"] >= 2
+        assert summary["deleted_oauth_accounts"] >= 1
+        assert summary["deleted_refresh_tokens"] >= 1
+        assert runtime.pool.list_accounts() == ()
+    finally:
+        runtime.close()
+
+
+def test_rate_limit_cooldown_escalates_like_freellm(tmp_path: Path) -> None:
+    runtime = GatewayRuntime.from_settings(_settings_for_gateway(tmp_path))
+    try:
+        account_id = runtime.add_api_key_account(
+            provider_id="groq",
+            label="rr",
+            account_key="groq-rr-1",
+            api_key="k",
+            auth_backend_key=None,
+            max_requests_per_day=None,
+            max_tokens_per_day=None,
+            enabled=True,
+        )
+        expected_windows = (120.0, 600.0, 3600.0, 86400.0, 86400.0)
+        observed: list[float] = []
+        for _ in range(5):
+            before = time()
+            runtime.pool.mark_failure(
+                account_id, error_type="RateLimitError", is_rate_limit=True
+            )
+            row = runtime.db.fetchone(
+                "SELECT cooldown_until FROM provider_accounts WHERE account_id = ?",
+                (account_id,),
+            )
+            assert row is not None and row["cooldown_until"] is not None
+            observed.append(float(row["cooldown_until"]) - before)
+        for actual, expected in zip(observed, expected_windows, strict=True):
+            assert abs(actual - expected) < 8.0
+    finally:
+        runtime.close()
+
+
 def test_gateway_routing_rules_seed_from_legacy_json(tmp_path: Path) -> None:
     settings = _settings_for_gateway(tmp_path)
     settings.gateway_routing_config = '{"routing":{"claude-sonnet":{"providers":["groq","open_router"],"strategy":"weighted"}}}'
@@ -192,6 +288,35 @@ def test_cost_analytics_snapshot(tmp_path: Path) -> None:
         costs = runtime.metrics.cost_analytics(days=30)
         assert costs["total"]["requests"] >= 1
         assert costs["total"]["estimated_cost_usd"] >= 0.012
+    finally:
+        runtime.close()
+
+
+def test_daily_usage_tracks_total_tokens_input_plus_output(tmp_path: Path) -> None:
+    runtime = GatewayRuntime.from_settings(_settings_for_gateway(tmp_path))
+    try:
+        runtime.metrics.log_request(
+            RequestMetrics(
+                request_id="req_usage_tokens_1",
+                gateway_model="open_router/demo",
+                provider_id="open_router",
+                account_id=None,
+                provider_model="open_router/demo",
+                success=True,
+                status_code=200,
+                error_type=None,
+                latency_ms=10.0,
+                input_tokens=70,
+                output_tokens=30,
+                retries=0,
+                fallback_count=0,
+                estimated_cost_usd=0.001,
+            )
+        )
+        snapshot = runtime.metrics.dashboard_snapshot()
+        usage = snapshot["daily_usage"]
+        assert usage
+        assert int(usage[0]["tokens"]) == 100
     finally:
         runtime.close()
 

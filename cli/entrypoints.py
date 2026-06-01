@@ -20,6 +20,7 @@ from api.gateway.crypto import CredentialCipher
 from api.gateway.db import GatewayDatabase
 from api.gateway.migrations import run_migrations
 from api.gateway.pool import ProviderPoolManager
+from api.gateway.runtime import GatewayRuntime
 from api.gateway.storage import create_storage_backend
 from cli.process_registry import (
     kill_all_best_effort,
@@ -259,3 +260,18 @@ def migrate_credentials() -> None:
             )
     finally:
         db.close()
+
+
+def wipe_credentials() -> None:
+    """Remove all stored provider credentials (API keys + OAuth tokens)."""
+    settings = get_settings()
+    runtime: GatewayRuntime | None = None
+    try:
+        runtime = GatewayRuntime.from_settings(settings)
+        summary = runtime.wipe_all_credentials()
+        print("Wiped stored credentials:")
+        for key, value in summary.items():
+            print(f"- {key}: {value}")
+    finally:
+        if runtime is not None:
+            runtime.close()

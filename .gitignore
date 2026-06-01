@@ -26,3 +26,6 @@ server.log
 agent_workspace/
 llama_cache/
 .smoke-results/
+
+# local generated output
+graphify-out/

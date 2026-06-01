@@ -80,7 +80,7 @@ def test_router_skips_provider_with_accounts_but_no_eligible_account() -> None:
     assert provider_chain == ["open_router", "nvidia_nim"]
 
 
-def test_router_keeps_provider_without_pool_accounts() -> None:
+def test_router_skips_remote_provider_without_pool_accounts() -> None:
     pool = _Pool()
     pool._accounts["groq"] = []
     pool._select["groq"] = None
@@ -105,5 +105,4 @@ def test_router_keeps_provider_without_pool_accounts() -> None:
     )
 
     provider_chain = [candidate.provider_id for candidate in decision.candidates]
-    assert provider_chain == ["groq", "open_router"]
-
+    assert provider_chain == ["open_router"]

@@ -8,6 +8,7 @@ import time
 import uuid
 from collections import defaultdict
 from dataclasses import dataclass
+from threading import Lock
 
 from loguru import logger
 
@@ -33,12 +34,30 @@ class RouterEngine:
 
     _PENALTY_DECAY_SECONDS = 120.0
     _MAX_PENALTY = 1.0
+    _CREDENTIALLESS_PROVIDERS = frozenset({"lmstudio", "llamacpp", "ollama"})
+    _PROVIDER_COST_SCORE = {
+        "gemini": 0.0,
+        "lmstudio": 0.0,
+        "llamacpp": 0.0,
+        "ollama": 0.0,
+        "cerebras": 0.15,
+        "groq": 0.2,
+        "deepseek": 0.3,
+        "kimi": 0.35,
+        "nvidia_nim": 0.4,
+        "mistral": 0.45,
+        "openai": 0.55,
+        "open_router": 0.65,
+        "anthropic": 0.85,
+    }
 
     def __init__(self, pool: ProviderPoolManager, config_store: RoutingConfigStore):
         self._pool = pool
         self._config_store = config_store
         self._provider_penalties: dict[str, float] = defaultdict(float)
         self._provider_penalty_updated_at: dict[str, float] = {}
+        self._provider_rr_index = 0
+        self._provider_rr_lock = Lock()
 
     def make_decision(self, routing_input: RoutingInput) -> RoutingDecision:
         request_id = f"route_{uuid.uuid4().hex[:12]}"
@@ -53,6 +72,7 @@ class RouterEngine:
         for index, provider_id in enumerate(provider_order):
             if not self._pool.is_provider_enabled(provider_id):
                 continue
+            accounts_for_provider = self._pool.list_accounts(provider_id)
             account = self._select_account(
                 provider_id,
                 rule.strategy,
@@ -60,7 +80,14 @@ class RouterEngine:
             )
             # If a provider has account pool records but none are currently eligible
             # (quota exhausted/cooldown/disabled), skip it so fallbacks can proceed.
-            if account is None and self._pool.list_accounts(provider_id):
+            if account is None and accounts_for_provider:
+                continue
+            # For remote API-key providers, do not route when no account exists.
+            if (
+                account is None
+                and not accounts_for_provider
+                and provider_id not in self._CREDENTIALLESS_PROVIDERS
+            ):
                 continue
             candidates.append(
                 RouteSelection(
@@ -105,7 +132,7 @@ class RouterEngine:
                     model_key=model,
                     providers=providers,
                     provider_weights={provider_id: 1.0 for provider_id in providers},
-                    strategy=RoutingStrategy.ADAPTIVE_LATENCY,
+                    strategy=RoutingStrategy.AUTO,
                 )
         direct: RouteRule | None = None
         wildcard: RouteRule | None = None
@@ -120,10 +147,26 @@ class RouterEngine:
             return direct
         if wildcard is not None:
             return wildcard
+        # Default behavior: no single pinned provider.
+        # Route over all enabled providers in round-robin order and fall through
+        # when a provider is out of quota/cooldown/credentials.
+        enabled: list[str] = []
+        for state in self._pool.list_providers():
+            if not state.enabled:
+                continue
+            provider_id = state.provider_id
+            has_accounts = bool(self._pool.list_accounts(provider_id))
+            if has_accounts or provider_id == routing_input.default_provider_id:
+                enabled.append(provider_id)
+        providers: list[str] = list(enabled)
+        if not providers and routing_input.default_provider_id:
+            providers = [routing_input.default_provider_id]
+        if not providers:
+            providers = []
         return RouteRule(
             model_key=model,
-            providers=(routing_input.default_provider_id,),
-            provider_weights={routing_input.default_provider_id: 1.0},
+            providers=tuple(providers),
+            provider_weights={provider_id: 1.0 for provider_id in providers},
             strategy=RoutingStrategy.ROUND_ROBIN,
         )
 
@@ -137,7 +180,15 @@ class RouterEngine:
         if strategy == RoutingStrategy.STICKY:
             chosen_key = sticky_key or self._stable_key(provider_id)
             return self._pool.account_by_sticky_hash(provider_id, chosen_key)
+        if strategy == RoutingStrategy.SMART_HEALTH:
+            return self._pool.best_latency_account(provider_id)
         if strategy == RoutingStrategy.PERFORMANCE_FIRST:
+            return self._pool.best_latency_account(provider_id)
+        if strategy == RoutingStrategy.QUALITY_FIRST:
+            return self._pool.best_latency_account(provider_id)
+        if strategy == RoutingStrategy.COST_OPTIMIZED:
+            return self._pool.best_quota_account(provider_id)
+        if strategy == RoutingStrategy.AUTO:
             return self._pool.best_latency_account(provider_id)
         if strategy == RoutingStrategy.ADAPTIVE_LATENCY:
             preferred = self._pool.best_latency_account(provider_id)
@@ -155,6 +206,8 @@ class RouterEngine:
         request_id: str,
         sticky_key: str | None,
     ) -> tuple[str, ...]:
+        if rule.strategy == RoutingStrategy.ROUND_ROBIN:
+            return self._round_robin_order(rule.providers)
         base_providers = (
             self._weighted_shuffle(
                 providers=rule.providers,
@@ -168,6 +221,15 @@ class RouterEngine:
             base_providers=base_providers,
             strategy=rule.strategy,
         )
+
+    def _round_robin_order(self, providers: tuple[str, ...]) -> tuple[str, ...]:
+        if not providers:
+            return providers
+        with self._provider_rr_lock:
+            start = self._provider_rr_index % len(providers)
+            self._provider_rr_index = (self._provider_rr_index + 1) % max(1, len(providers))
+        rotated = providers[start:] + providers[:start]
+        return rotated
 
     def _rank_providers(
         self,
@@ -201,9 +263,34 @@ class RouterEngine:
                     + runtime.latency_score * 0.1
                     + penalty * 0.1
                 )
+            elif strategy == RoutingStrategy.COST_OPTIMIZED:
+                score = (
+                    self._provider_cost(provider_id) * 0.55
+                    + runtime.latency_score * 0.2
+                    + (1.0 - runtime.health_score) * 0.15
+                    + (1.0 - runtime.quota_headroom) * 0.05
+                    + penalty * 0.05
+                )
+            elif strategy == RoutingStrategy.QUALITY_FIRST:
+                score = (
+                    (1.0 - runtime.health_score) * 0.45
+                    + runtime.latency_score * 0.25
+                    + (1.0 - runtime.quota_headroom) * 0.15
+                    + self._provider_cost(provider_id) * 0.1
+                    + penalty * 0.05
+                )
+            elif strategy == RoutingStrategy.AUTO:
+                score = (
+                    (1.0 - runtime.health_score) * 0.35
+                    + runtime.latency_score * 0.35
+                    + (1.0 - runtime.quota_headroom) * 0.15
+                    + self._provider_cost(provider_id) * 0.1
+                    + penalty * 0.05
+                )
             elif strategy in (
                 RoutingStrategy.PERFORMANCE_FIRST,
                 RoutingStrategy.ADAPTIVE_LATENCY,
+                RoutingStrategy.SMART_HEALTH,
             ):
                 score = (
                     runtime.latency_score * 0.55
@@ -221,6 +308,9 @@ class RouterEngine:
             scored.append((score, index, provider_id))
         scored.sort(key=lambda item: (item[0], item[1]))
         return tuple(provider_id for _score, _index, provider_id in scored)
+
+    def _provider_cost(self, provider_id: str) -> float:
+        return self._PROVIDER_COST_SCORE.get(provider_id, 0.5)
 
     def note_provider_failure(
         self,

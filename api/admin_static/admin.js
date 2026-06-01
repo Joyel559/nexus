@@ -5,10 +5,27 @@ const state = {
   localStatus: new Map(),
   modelOptions: [],
   oauthProviderStatus: {},
+  gatewayAccounts: [],
 };
 
 const MASKED_SECRET = "********";
-const HIDDEN_PROVIDERS = new Set(["wafer", "opencode"]);
+const HIDDEN_PROVIDERS = new Set([
+  "wafer",
+  "opencode",
+  "github_models",
+  "antigravity",
+]);
+const HIDDEN_FIELD_KEYS = new Set([
+  "GITHUB_MODELS_API_KEY",
+  "GEMINI_API_KEY",
+  "GEMINI_BASE_URL",
+  "GOOGLE_OAUTH_CLIENT_ID",
+  "GOOGLE_OAUTH_CLIENT_SECRET",
+  "GOOGLE_OAUTH_SCOPES",
+  "GITHUB_OAUTH_CLIENT_ID",
+  "GITHUB_OAUTH_CLIENT_SECRET",
+]);
+const OAUTH_ONLY_PROVIDERS = new Set([]);
 
 const byId = (id) => document.getElementById(id);
 
@@ -40,13 +57,57 @@ function providerName(providerId) {
     mistral: "Mistral",
     cohere: "Cohere",
     github_models: "GitHub Models",
-    antigravity: "Antigravity",
+    gemini: "Gemini API",
   };
   if (names[providerId]) return names[providerId];
   return providerId
     .split("_")
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
+}
+
+async function quickAddProviderApiKey(providerId, providedKey = null) {
+  if (OAUTH_ONLY_PROVIDERS.has(providerId)) {
+    showMessage(`${providerName(providerId)} uses OAuth flow.`, "error");
+    return;
+  }
+  const apiKey =
+    (providedKey ?? window.prompt(`Enter API key for ${providerName(providerId)}`))
+      ?.trim() || "";
+  if (!apiKey) return;
+  const now = Date.now();
+  await api("/admin/api/gateway/accounts", {
+    method: "POST",
+    body: JSON.stringify({
+      provider_id: providerId,
+      account_key: `${providerId}-key-${now}`,
+      auth_backend_key: "api_key_default",
+      label: "default",
+      api_key: apiKey,
+      max_requests_per_day: null,
+      max_tokens_per_day: null,
+      enabled: true,
+    }),
+  });
+  await safeRefreshGatewayDashboard({ silent: true });
+  showMessage(`${providerName(providerId)} API key saved`, "ok");
+}
+
+function setSelectedApiProvider(providerId) {
+  const input = byId("gaProvider");
+  const hint = byId("gaProviderHint");
+  if (!input || !hint) return;
+  const normalized = String(providerId || "").trim();
+  input.value = normalized;
+  if (!normalized) {
+    hint.textContent = "Click a provider card above to select provider.";
+    return;
+  }
+  if (OAUTH_ONLY_PROVIDERS.has(normalized)) {
+    hint.textContent = `${providerName(normalized)} uses OAuth. Use the Connect button instead of API key form.`;
+    return;
+  }
+  hint.textContent = `Selected provider: ${providerName(normalized)}`;
 }
 
 function statusClass(status) {
@@ -59,10 +120,23 @@ function statusClass(status) {
 async function api(path, options = {}) {
   const response = await fetch(path, {
     headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+    cache: "no-store",
     ...options,
   });
   if (!response.ok) {
-    throw new Error(`${response.status} ${response.statusText}`);
+    let detail = "";
+    try {
+      const payload = await response.json();
+      detail = payload?.detail ? `: ${payload.detail}` : "";
+    } catch {
+      try {
+        const text = await response.text();
+        detail = text ? `: ${text.slice(0, 240)}` : "";
+      } catch {
+        detail = "";
+      }
+    }
+    throw new Error(`${response.status} ${response.statusText}${detail}`);
   }
   return response.json();
 }
@@ -79,6 +153,7 @@ async function load() {
   updateHeader(status);
   renderNav(config.sections);
   renderProviders(config.provider_status);
+  setSelectedApiProvider(byId("gaProvider")?.value || "");
   renderSections(config.sections, config.fields);
   byId("configPath").textContent = config.paths.managed;
   await validate(false);
@@ -158,15 +233,10 @@ function renderProviders(providerStatus) {
     button.addEventListener("click", () => testProvider(provider.provider_id, button));
 
     card.style.cursor = "pointer";
-    card.addEventListener("click", (e) => {
+    card.addEventListener("click", async (e) => {
       if (e.target.tagName === "BUTTON") return;
-      const form = byId("addApiAccountForm");
-      if (form) {
-        form.scrollIntoView({ behavior: "smooth" });
-        byId("gaProvider").value = provider.provider_id;
-        byId("gaLabel").value = "default";
-        byId("gaSecret").focus();
-      }
+      setSelectedApiProvider(provider.provider_id);
+      await quickAddProviderApiKey(provider.provider_id);
     });
 
     card.append(title, meta, button);
@@ -191,6 +261,7 @@ function renderSections(sections, fields) {
   const bySection = new Map();
   sections.forEach((section) => bySection.set(section.id, []));
   fields.forEach((field) => {
+    if (HIDDEN_FIELD_KEYS.has(field.key)) return;
     if (!bySection.has(field.section)) bySection.set(field.section, []);
     bySection.get(field.section).push(field);
   });
@@ -468,6 +539,23 @@ async function refreshLocalStatus() {
       : provider.base_url;
     updateProviderCard(provider.provider_id, provider.status, provider.label, meta);
   });
+  syncLocalStatusWithGatewayAccounts();
+}
+
+function syncLocalStatusWithGatewayAccounts() {
+  if (!Array.isArray(state.gatewayAccounts) || !state.gatewayAccounts.length) return;
+  const enabledByProvider = new Map();
+  for (const row of state.gatewayAccounts) {
+    if (!row || !row.provider_id) continue;
+    const current = enabledByProvider.get(row.provider_id) || 0;
+    if (row.enabled) enabledByProvider.set(row.provider_id, current + 1);
+  }
+  enabledByProvider.forEach((count, providerId) => {
+    if (count <= 0) return;
+    const existing = state.localStatus.get(providerId);
+    if (existing && existing.status === "configured") return;
+    updateProviderCard(providerId, "configured", "Configured", `${count} account(s) in gateway`);
+  });
 }
 
 async function testProvider(providerId, button) {
@@ -502,6 +590,7 @@ async function testProvider(providerId, button) {
 async function refreshGatewayDashboard() {
   const data = await api("/admin/api/gateway/dashboard");
   const providers = data.providers || [];
+  state.gatewayAccounts = data.accounts || [];
   const recentRequests = data.recent_requests || [];
   const activeProviderSet = new Set(
     providers
@@ -516,7 +605,7 @@ async function refreshGatewayDashboard() {
   );
 
   renderGatewayProviders(data.providers || []);
-  renderGatewayAccounts(data.accounts || []);
+  renderGatewayAccounts(state.gatewayAccounts);
   renderGatewayUsage(data.daily_usage || []);
   renderGatewayCosts(data.cost_analytics || {});
   renderGatewayLiveGraphs(realtimeRequests);
@@ -535,16 +624,34 @@ async function refreshGatewayDashboard() {
   renderGatewayAgents(data.agents || [], data.agent_summary || {});
   renderAgentsConfigPanel(data.agents || [], data.agent_summary || {});
   renderOAuthEcosystems(
-    data.accounts || [],
+    state.gatewayAccounts,
     data.oauth_accounts || [],
     data.oauth_provider_status || {},
   );
+  syncLocalStatusWithGatewayAccounts();
   
   // Modern Dashboard rendering
   renderDashActiveModels(providers, realtimeRequests);
   renderDashModelAccuracy(data.benchmarks || [], realtimeRequests);
   renderDashModelMetrics(realtimeRequests);
   renderDashModelStatusCards(realtimeRequests);
+}
+
+let _refreshInFlight = false;
+async function safeRefreshGatewayDashboard({ silent = false } = {}) {
+  if (_refreshInFlight) return;
+  _refreshInFlight = true;
+  try {
+    await refreshGatewayDashboard();
+    if (!silent) {
+      showMessage(`Gateway refreshed at ${new Date().toLocaleTimeString()}`, "ok");
+    }
+  } catch (error) {
+    showMessage(`Gateway refresh failed: ${error.message}`, "error");
+    throw error;
+  } finally {
+    _refreshInFlight = false;
+  }
 }
 
 window.showActiveModelsModal = function() {
@@ -1194,13 +1301,10 @@ function renderGatewayAgents(rows, summary) {
 function renderOAuthEcosystems(accounts, oauthAccounts, providerStatus) {
   state.oauthProviderStatus = providerStatus || {};
   const ecosystemSpec = [
-    { providerId: "antigravity", summaryId: "oauthGoogleSummary", authLabel: "Google / Antigravity" },
-    { providerId: "github_models", summaryId: "oauthGithubSummary", authLabel: "GitHub OAuth" },
+    { providerId: "gemini", summaryId: "oauthGoogleSummary", authLabel: "Google / Gemini" },
   ];
   const googleCfg = providerStatus.google || {};
-  const githubCfg = providerStatus.github || {};
   const googleBtn = byId("oauthGoogleLoginBtn");
-  const githubBtn = byId("oauthGithubLoginBtn");
   if (googleBtn) {
     const googleReady = Boolean(googleCfg.configured);
     googleBtn.disabled = false;
@@ -1208,13 +1312,6 @@ function renderOAuthEcosystems(accounts, oauthAccounts, providerStatus) {
       ? "Open Google OAuth login flow"
       : "Configure GOOGLE_OAUTH_CLIENT_ID and GOOGLE_OAUTH_CLIENT_SECRET first";
     googleBtn.dataset.configured = googleReady ? "yes" : "no";
-  }
-  if (githubBtn) {
-    githubBtn.disabled = false;
-    githubBtn.title = githubCfg.configured
-      ? "Open GitHub OAuth login flow"
-      : "Configure GitHub OAuth client ID and secret first";
-    githubBtn.dataset.configured = githubCfg.configured ? "yes" : "no";
   }
   for (const spec of ecosystemSpec) {
     const summary = byId(spec.summaryId);
@@ -1243,25 +1340,20 @@ function renderOAuthEcosystems(accounts, oauthAccounts, providerStatus) {
       (sum, row) => sum + Number(row.used_tokens_today || 0),
       0,
     );
-    const status = spec.providerId === "antigravity" ? googleCfg : githubCfg;
+    const status = googleCfg;
     const callbackUrl = status.callback_url || "-";
     const configuredText = status.configured ? "configured" : "missing setup";
     const suggestedModels = Array.isArray(status.suggested_models)
       ? status.suggested_models.slice(0, 3).join(", ")
       : "-";
     const healthText =
-      spec.providerId === "antigravity"
-        ? (status.setup?.client_id_set && status.setup?.client_secret_set ? "client configured" : "client missing")
-        : (status.client_id_set && status.client_secret_set ? "client configured" : "client missing");
+      status.setup?.client_id_set && status.setup?.client_secret_set ? "client configured" : "client missing";
     summary.innerHTML = `
       <div class="ecosystem-row"><span>Auth Backend</span><strong>${esc(spec.authLabel)}</strong></div>
       <div class="ecosystem-row"><span>OAuth Setup</span><strong>${esc(configuredText)}</strong></div>
       <div class="ecosystem-row"><span>Callback URL</span><strong>${esc(callbackUrl)}</strong></div>
       <div class="ecosystem-row"><span>Provider Health</span><strong>${esc(healthText)}</strong></div>
       <div class="ecosystem-row"><span>Suggested Models</span><strong>${esc(suggestedModels)}</strong></div>
-      ${spec.providerId === "github_models"
-        ? `<div class="ecosystem-row"><span>Student Benefits</span><strong>${studentDetected ? "detected" : "unknown"}</strong></div>`
-        : ""}
       <div class="ecosystem-row"><span>Connected Accounts</span><strong>${providerOauth.length}</strong></div>
       <div class="ecosystem-row"><span>Rotation State</span><strong>${active} active / ${cooldown} cooldown</strong></div>
       <div class="ecosystem-row"><span>Today Usage</span><strong>${totalReq.toLocaleString()} req · ${totalTok.toLocaleString()} tok</strong></div>
@@ -1280,26 +1372,23 @@ function tableHtml(headers, rows) {
 
 async function addApiAccount(event) {
   event.preventDefault();
-  await api("/admin/api/gateway/accounts", {
-    method: "POST",
-    body: JSON.stringify({
-      provider_id: byId("gaProvider").value.trim(),
-      account_key: byId("gaKey").value.trim(),
-      auth_backend_key: byId("gaBackend").value.trim() || null,
-      label: byId("gaLabel").value.trim(),
-      api_key: byId("gaSecret").value.trim(),
-      max_requests_per_day: byId("gaReqQuota").value.trim()
-        ? Number(byId("gaReqQuota").value.trim())
-        : null,
-      max_tokens_per_day: byId("gaTokQuota").value.trim()
-        ? Number(byId("gaTokQuota").value.trim())
-        : null,
-      enabled: true,
-    }),
-  });
+  const providerId = byId("gaProvider").value.trim();
+  const apiKey = byId("gaSecret").value.trim();
+  if (!providerId) {
+    showMessage("Select a provider first by clicking a provider card.", "error");
+    return;
+  }
+  if (OAUTH_ONLY_PROVIDERS.has(providerId)) {
+    showMessage(`${providerName(providerId)} requires OAuth login. Use Connect button above.`, "error");
+    return;
+  }
+  if (!apiKey) {
+    showMessage("API key is required.", "error");
+    return;
+  }
+  await quickAddProviderApiKey(providerId, apiKey);
   event.target.reset();
-  await refreshGatewayDashboard();
-  showMessage("API account added", "ok");
+  setSelectedApiProvider(providerId);
 }
 
 async function importAgent(event) {
@@ -1324,15 +1413,6 @@ async function oauthGoogleLogin() {
     document.querySelector('[data-key="GOOGLE_OAUTH_CLIENT_ID"]')?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
   window.location.assign(`/admin/oauth/google/start?account_key=${encodeURIComponent(`google-${Date.now()}`)}`);
-}
-
-async function oauthGithubLogin() {
-  const githubCfg = state.oauthProviderStatus.github || {};
-  if (!githubCfg.configured) {
-    showMessage("GitHub OAuth is not configured. Set GITHUB_OAUTH_CLIENT_ID and GITHUB_OAUTH_CLIENT_SECRET.", "error");
-    document.querySelector('[data-key="GITHUB_OAUTH_CLIENT_ID"]')?.scrollIntoView({ behavior: "smooth", block: "center" });
-  }
-  window.location.assign(`/admin/oauth/github/start?account_key=${encodeURIComponent(`github-${Date.now()}`)}`);
 }
 
 window.gatewayToggleProvider = async (providerId, enabled) => {
@@ -1412,7 +1492,7 @@ function connectGatewayMetricsSocket() {
   const protocol = window.location.protocol === "https:" ? "wss" : "ws";
   const ws = new WebSocket(`${protocol}://${window.location.host}/admin/ws/metrics`);
   ws.onmessage = (_event) => {
-    refreshGatewayDashboard().catch(() => {});
+    safeRefreshGatewayDashboard({ silent: true }).catch(() => {});
   };
   ws.onclose = () => {
     setTimeout(connectGatewayMetricsSocket, 2000);
@@ -1439,7 +1519,9 @@ function showMessage(message, kind = "") {
 byId("validateButton").addEventListener("click", () => validate(true));
 byId("applyButton").addEventListener("click", apply);
 byId("refreshLocal").addEventListener("click", refreshLocalStatus);
-byId("refreshGateway").addEventListener("click", refreshGatewayDashboard);
+byId("refreshGateway").addEventListener("click", () => {
+  safeRefreshGatewayDashboard().catch(() => {});
+});
 byId("addApiAccountForm").addEventListener("submit", addApiAccount);
 byId("importAgentForm")?.addEventListener("submit", (event) => {
   importAgent(event).catch((error) => showMessage(error.message, "error"));
@@ -1463,14 +1545,31 @@ byId("agentsSyncEnabledBtn")?.addEventListener("click", () => {
     .catch((error) => showMessage(error.message, "error"));
 });
 byId("agentsSearch")?.addEventListener("input", () => {
-  refreshGatewayDashboard().catch(() => {});
+  safeRefreshGatewayDashboard({ silent: true }).catch(() => {});
 });
 byId("oauthGoogleLoginBtn")?.addEventListener("click", () => {
   oauthGoogleLogin().catch((error) => showMessage(error.message, "error"));
 });
-byId("oauthGithubLoginBtn")?.addEventListener("click", () => {
-  oauthGithubLogin().catch((error) => showMessage(error.message, "error"));
+byId("openAgentsPageBtn")?.addEventListener("click", () => {
+  window.open("/admin?tab=agents", "_blank", "noopener,noreferrer");
 });
+byId("backToDashboardBtn")?.addEventListener("click", () => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("tab") === "agents") {
+    window.location.assign("/admin");
+    return;
+  }
+  byId("agentsPage").style.display = "none";
+  byId("formSections").style.display = "";
+});
+
+(() => {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("tab") === "agents") {
+    byId("agentsPage").style.display = "";
+    byId("formSections").style.display = "none";
+  }
+})();
 
 load().catch((error) => {
   byId("serverStatus").textContent = "Error";
@@ -1479,3 +1578,6 @@ load().catch((error) => {
 });
 
 connectGatewayMetricsSocket();
+setInterval(() => {
+  safeRefreshGatewayDashboard({ silent: true }).catch(() => {});
+}, 5000);

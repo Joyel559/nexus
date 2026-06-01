@@ -19,7 +19,7 @@ _DEFAULT_PRICE_CARDS: dict[str, PriceCard] = {
     "mistral": PriceCard(input_per_1k_usd=0.002, output_per_1k_usd=0.006),
     "cohere": PriceCard(input_per_1k_usd=0.003, output_per_1k_usd=0.015),
     "github_models": PriceCard(input_per_1k_usd=0.0015, output_per_1k_usd=0.006),
-    "antigravity": PriceCard(input_per_1k_usd=0.0, output_per_1k_usd=0.0),
+    "gemini": PriceCard(input_per_1k_usd=0.0, output_per_1k_usd=0.0),
     "nvidia_nim": PriceCard(input_per_1k_usd=0.0, output_per_1k_usd=0.0),
     "deepseek": PriceCard(input_per_1k_usd=0.001, output_per_1k_usd=0.002),
     "kimi": PriceCard(input_per_1k_usd=0.001, output_per_1k_usd=0.003),

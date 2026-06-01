@@ -7,7 +7,7 @@ import pytest
 from config.nim import NimSettings
 from config.provider_ids import SUPPORTED_PROVIDER_IDS
 from providers.anthropic import AnthropicProvider
-from providers.antigravity import AntigravityProvider
+from providers.gemini import GeminiProvider
 from providers.cerebras import CerebrasProvider
 from providers.cohere import CohereProvider
 from providers.deepseek import DeepSeekProvider
@@ -46,8 +46,8 @@ def _make_settings(**overrides):
     mock.mistral_api_key = "test_mistral_key"
     mock.cohere_api_key = "test_cohere_key"
     mock.github_models_api_key = "test_github_models_key"
-    mock.antigravity_api_key = "test_antigravity_key"
-    mock.antigravity_base_url = "http://127.0.0.1:4141/v1"
+    mock.gemini_api_key = "test_gemini_key"
+    mock.gemini_base_url = "https://generativelanguage.googleapis.com/v1beta/openai/"
     mock.lm_studio_base_url = "http://localhost:1234/v1"
     mock.llamacpp_base_url = "http://localhost:8080/v1"
     mock.ollama_base_url = "http://localhost:11434"
@@ -65,7 +65,7 @@ def _make_settings(**overrides):
     mock.mistral_proxy = ""
     mock.cohere_proxy = ""
     mock.github_models_proxy = ""
-    mock.antigravity_proxy = ""
+    mock.gemini_proxy = ""
     mock.provider_rate_limit = 40
     mock.provider_rate_window = 60
     mock.provider_max_concurrency = 5
@@ -135,7 +135,7 @@ def test_create_provider_instantiates_each_builtin():
         "mistral": MistralProvider,
         "cohere": CohereProvider,
         "github_models": GitHubModelsProvider,
-        "antigravity": AntigravityProvider,
+        "gemini": GeminiProvider,
     }
 
     with (

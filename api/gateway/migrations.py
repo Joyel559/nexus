@@ -15,7 +15,10 @@ def _alembic_config_for_db(*, backend: str, sqlite_db_path: str, postgres_dsn: s
     cfg.set_main_option("script_location", str(repo_root / "alembic"))
     normalized = backend.strip().lower()
     if normalized == "sqlite":
-        cfg.set_main_option("sqlalchemy.url", f"sqlite:///{Path(sqlite_db_path)}")
+        sqlite_path = Path(sqlite_db_path)
+        # Ensure parent exists so Alembic/SQLite can open the database file.
+        sqlite_path.parent.mkdir(parents=True, exist_ok=True)
+        cfg.set_main_option("sqlalchemy.url", f"sqlite:///{sqlite_path}")
     elif normalized == "postgres":
         if not (postgres_dsn or "").strip():
             raise ValueError("GATEWAY_POSTGRES_DSN is required for postgres backend")

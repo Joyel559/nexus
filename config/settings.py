@@ -135,10 +135,10 @@ class Settings(BaseSettings):
     github_models_api_key: str = Field(
         default="", validation_alias="GITHUB_MODELS_API_KEY"
     )
-    antigravity_api_key: str = Field(default="", validation_alias="ANTIGRAVITY_API_KEY")
-    antigravity_base_url: str = Field(
-        default="http://127.0.0.1:4141/v1",
-        validation_alias="ANTIGRAVITY_BASE_URL",
+    gemini_api_key: str = Field(default="", validation_alias="GEMINI_API_KEY")
+    gemini_base_url: str = Field(
+        default="https://generativelanguage.googleapis.com/v1beta/openai/",
+        validation_alias="GEMINI_BASE_URL",
     )
     google_oauth_client_id: str = Field(
         default="",
@@ -220,7 +220,7 @@ class Settings(BaseSettings):
     mistral_proxy: str = Field(default="", validation_alias="MISTRAL_PROXY")
     cohere_proxy: str = Field(default="", validation_alias="COHERE_PROXY")
     github_models_proxy: str = Field(default="", validation_alias="GITHUB_MODELS_PROXY")
-    antigravity_proxy: str = Field(default="", validation_alias="ANTIGRAVITY_PROXY")
+    gemini_proxy: str = Field(default="", validation_alias="GEMINI_PROXY")
 
     # ==================== Provider Rate Limiting ====================
     provider_rate_limit: int = Field(default=40, validation_alias="PROVIDER_RATE_LIMIT")

@@ -647,7 +647,7 @@ async def gateway_add_account(payload: GatewayAccountPayload, request: Request):
 @router.post("/admin/api/gateway/oauth-accounts")
 async def gateway_add_oauth_account(payload: GatewayOAuthPayload, request: Request):
     require_loopback_admin(request)
-    if payload.provider_id in {"antigravity", "github_models"}:
+    if payload.provider_id in {"github_models"}:
         raise HTTPException(
             status_code=400,
             detail=(
@@ -1036,6 +1036,15 @@ async def gateway_migrate_legacy_credentials(request: Request):
     }
 
 
+@router.post("/admin/api/gateway/credentials/wipe")
+async def gateway_wipe_credentials(request: Request):
+    require_loopback_admin(request)
+    runtime = _gateway_runtime(request)
+    async with runtime.lock_manager.lock("gateway.credentials.wipe"):
+        summary = runtime.wipe_all_credentials()
+    return {"ok": True, "summary": summary}
+
+
 @router.post("/admin/api/gateway/replay/{request_id}")
 async def gateway_replay(request_id: str, request: Request):
     require_loopback_admin(request)
@@ -1196,16 +1205,14 @@ async def _oauth_provider_status(request: Request) -> dict[str, Any]:
     github_ready = oauth.github_configured()
     return {
         "google": {
-            "provider_id": "antigravity",
+            "provider_id": "gemini",
             "configured": google_ready,
             "callback_url": _oauth_callback_url(request, "google"),
             "suggested_models": [
-                "antigravity/antigravity-claude-sonnet-4-6",
-                "antigravity/antigravity-claude-opus-4-6-thinking",
-                "antigravity/antigravity-gemini-3-flash",
-                "antigravity/antigravity-gemini-3-pro",
-                "antigravity/gemini-2.5-pro",
-                "antigravity/gemini-2.5-flash",
+                "gemini/gemini-2.5-pro",
+                "gemini/gemini-2.5-flash",
+                "gemini/gemini-1.5-pro",
+                "gemini/gemini-1.5-flash",
             ],
             "setup": {
                 "client_id_set": bool((settings.google_oauth_client_id or "").strip()),

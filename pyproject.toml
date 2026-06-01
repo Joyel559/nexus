@@ -36,6 +36,7 @@ nexus = "cli.entrypoints:serve"
 fcc-init = "cli.entrypoints:init"
 fcc-claude = "cli.entrypoints:launch_claude"
 fcc-migrate-credentials = "cli.entrypoints:migrate_credentials"
+fcc-wipe-credentials = "cli.entrypoints:wipe_credentials"
 
 [project.optional-dependencies]
 voice = [
