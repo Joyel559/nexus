@@ -26,7 +26,7 @@ dependencies = [
     "aiohttp>=3.13.4",
     "cryptography>=45.0.0",
     "prometheus-client>=0.23.1",
-    "redis>=6.4.0",
+    "redis>=8.0.0",
     "psycopg[binary]>=3.3.4",
 ]
 
