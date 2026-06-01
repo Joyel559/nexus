@@ -300,3 +300,31 @@ uv tool install --force /absolute/path/to/nexus
 ## License
 
 Choose and add your project license file before publishing publicly.
+## Simple Commands (`server` / `claudecode`)
+
+Nexus keeps legacy command names for compatibility:
+
+- `fcc-server`
+- `fcc-claude`
+
+If you want cleaner commands:
+
+- `server`
+- `claudecode`
+
+run:
+
+```bash
+./scripts/install-command-aliases.sh
+source ~/.bashrc
+```
+
+Then use:
+
+```bash
+server
+# new terminal in any project folder
+claudecode
+```
+
+These aliases are wrappers over `fcc-*`, so old behavior stays intact.
