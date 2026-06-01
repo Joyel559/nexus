@@ -16,9 +16,7 @@ fi
 
 cat >> "${TARGET_SHELL_FILE}" <<'EOF'
 # >>> nexus command aliases >>>
-# Backward-compatible command names:
-# - server     -> fcc-server
-# - claudecode -> fcc-claude
+# Nexus commands
 alias server='fcc-server'
 alias claudecode='fcc-claude'
 # <<< nexus command aliases <<<
